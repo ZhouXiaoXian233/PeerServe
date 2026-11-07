@@ -1,0 +1,56 @@
+name: Bug report / 缺陷报告
+description: 报告一个可复现的问题
+labels: ["bug", "triage"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        > ⚠️ 安全漏洞请**不要**在这里提交，请按 [SECURITY.md](../SECURITY.md) 私下报告。
+        > ⚠️ 本项目处于 Phase 0，尚无身份/签名/网络功能——请先确认你的问题不在"未实现"清单里（README §7）。
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: 发生了什么
+      description: 实际行为与期望行为
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: 复现步骤
+      placeholder: |
+        1. cd app/mobile
+        2. flutter run
+        3. ...
+    validations:
+      required: true
+  - type: textarea
+    id: logs
+    attributes:
+      label: 相关日志 / 截图
+      description: 请先脱敏：不要包含私钥、手机号、精确位置或真实订单内容
+      render: shell
+  - type: input
+    id: version
+    attributes:
+      label: 版本 / commit
+      placeholder: main@abc1234
+    validations:
+      required: true
+  - type: input
+    id: flutter
+    attributes:
+      label: Flutter 版本
+      description: 粘贴 `flutter --version` 的第一行
+    validations:
+      required: true
+  - type: dropdown
+    id: surface
+    attributes:
+      label: 影响范围
+      multiple: true
+      options:
+        - UI / 交互
+        - 构建 / CI
+        - 文档
+        - 协议设计（仅文档层面）

@@ -1,0 +1,48 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  flutter:
+    name: analyze + format + test
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: app/mobile
+
+    steps:
+      - uses: actions/checkout@v4
+
+      # 版本必须与 docs/ENVIRONMENT_SETUP.md 记录的一致：
+      # Flutter 3.47.8 · Dart 3.13.7（本机验证过的版本）。
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.47.8'
+          channel: stable
+          cache: true
+
+      - name: 打印工具链版本
+        run: flutter --version
+
+      - name: 拉取依赖
+        run: flutter pub get
+
+      - name: 格式检查
+        run: dart format --output=none --set-exit-if-changed lib test
+
+      - name: 静态分析
+        run: flutter analyze
+
+      - name: 测试
+        run: flutter test --reporter expanded

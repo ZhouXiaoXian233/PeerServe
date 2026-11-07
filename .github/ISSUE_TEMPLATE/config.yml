@@ -1,0 +1,10 @@
+name: Config / 问题反馈
+description: 报告模板选择
+blank_issues_enabled: false
+contact_links:
+  - name: 安全问题 / Security
+    url: https://github.com/YOUR_GITHUB_OWNER/peerserve/security/advisories/new
+    about: 请勿公开提交漏洞细节，使用私密报告渠道。
+  - name: 先读文档 / Read the docs
+    url: https://github.com/YOUR_GITHUB_OWNER/peerserve/tree/main/docs
+    about: 大多数"怎么用/为什么这样设计"的问题在 docs/ 里有答案。

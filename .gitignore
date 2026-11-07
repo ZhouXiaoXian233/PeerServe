@@ -1,0 +1,52 @@
+# Dart / Flutter
+.dart_tool/
+.packages
+.pub-cache/
+.pub/
+build/
+.flutter-plugins
+.flutter-plugins-dependencies
+pubspec.lock.orig
+
+# Local run artifacts
+*.log
+*.iml
+.idea/
+.vscode/*
+!.vscode/settings.json
+!.vscode/launch.json
+*.swp
+
+# Android
+app/mobile/android/.gradle/
+app/mobile/android/local.properties
+app/mobile/android/key.properties
+app/mobile/android/app/debug/
+app/mobile/android/app/profile/
+app/mobile/android/app/release/
+*.jks
+*.keystore
+
+# iOS / macOS generated
+**/ios/Flutter/Generated.xcconfig
+**/ios/Flutter/flutter_export_environment.sh
+**/macos/Flutter/Generated.xcconfig
+**/macos/Flutter/ephemeral/
+
+# Web / desktop generated
+**/web/index.html.bak
+**/linux/flutter/ephemeral/
+**/windows/flutter/ephemeral/
+
+# Coverage & test output
+coverage/
+test/failures/
+*.golden.png.tmp
+
+# Secrets — never commit keys, backups or tokens
+*.pem
+*.key
+secrets/
+.env
+.env.*
+!.env.example

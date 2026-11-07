@@ -1,0 +1,52 @@
+name: Feature request / 功能建议
+description: 提议一个新能力或改进
+labels: ["enhancement", "triage"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        提出前请先读 [docs/PROJECT_OVERVIEW.md](../docs/PROJECT_OVERVIEW.md) 的"非目标"与 [docs/DECISIONS.md](../docs/DECISIONS.md)。
+        以下方向**不会**被接受：代币/NFT、中心业务服务器、自动裁决、强制全局信用分、中心化支付托管。
+  - type: textarea
+    id: problem
+    attributes:
+      label: 要解决什么问题
+      description: 描述用户场景，而不是先描述实现方案
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: 建议方案
+      description: 如果涉及协议字段，请说明对已有签名数据的影响
+    validations:
+      required: true
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: 考虑过的替代方案
+  - type: dropdown
+    id: phase
+    attributes:
+      label: 属于哪个阶段
+      options:
+        - Phase 0（技术验证/骨架）
+        - Phase 1（本地业务核心）
+        - Phase 2（两节点直连）
+        - Phase 3（公告板体验）
+        - Phase 4（发现与缓存）
+        - Phase 5（安全与发布）
+        - 不确定
+    validations:
+      required: true
+  - type: checkboxes
+    id: constraints
+    attributes:
+      label: 约束确认
+      options:
+        - label: 该建议不引入中心业务服务器
+          required: true
+        - label: 该建议不引入代币或链上依赖
+          required: true
+        - label: 该建议不把单方投诉自动转成处罚
+          required: true
