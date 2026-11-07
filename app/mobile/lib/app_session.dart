@@ -118,6 +118,7 @@ class AppSession extends ChangeNotifier {
   Future<PeerIdentity>? _identityFuture;
   bool _loadingIdentity = false;
   String? _identityError;
+  String? _bootstrapError;
   UserProfile _profile = const UserProfile();
   final List<SignedRequest> _requests = <SignedRequest>[];
   final List<SignedOffer> _offers = <SignedOffer>[];
@@ -128,6 +129,7 @@ class AppSession extends ChangeNotifier {
   PeerIdentity? get identity => _identity;
   bool get loadingIdentity => _loadingIdentity;
   String? get identityError => _identityError;
+  String? get bootstrapError => _bootstrapError;
   UserProfile get profile => _profile;
   List<SignedRequest> get requests =>
       List<SignedRequest>.unmodifiable(_requests);
@@ -161,8 +163,14 @@ class AppSession extends ChangeNotifier {
   Future<void> bootstrap() => _bootstrapFuture ??= _bootstrapInternal();
 
   Future<void> _bootstrapInternal() async {
-    await ensureIdentity();
-    await _seedSamples();
+    try {
+      await ensureIdentity();
+      await _seedSamples();
+    } on Object catch (error) {
+      _bootstrapError = '示例数据初始化失败；发布功能仍可重试。';
+      debugPrint('PeerServe bootstrap error: $error');
+      notifyListeners();
+    }
   }
 
   /// 确保本机身份已生成；并发调用会复用同一个 Future。

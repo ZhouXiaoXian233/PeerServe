@@ -9,6 +9,23 @@
 - Phase 0.2c：Offer / Agreement / Event / Review 业务对象模型与字段校验
 - Phase 0.3：SQLite 持久化与重启恢复验证
 
+## [0.2.8] - 2026-11-07
+
+### 修复
+
+- 修复 web（dart2js）下整数被同时判定为 `int` 与 `double`，导致 `schema_version: 1` 被误判为浮点、示例数据初始化和需求发布失败的问题。
+- 协议字段统一改用 `requireProtocolInt`：先接受 `int`，只拒绝真正的非整数 `double`。
+- 增加整数校验回归测试。
+
+### 变更
+
+- 应用版本提升到 `0.2.8+10`。
+- 首页在示例数据初始化失败时显示用户可读提示（技术细节只写调试日志）。
+
+### 说明
+
+- 已在真实 Chrome release 产物中验证：示例数据可加载，发布表单可成功新增需求。
+
 ## [0.2.7] - 2026-11-07
 
 ### 新增
@@ -177,7 +194,8 @@
 - 本版本**不含**身份、签名、数据库、网络与任何业务逻辑；不可用于真实交易。
 - 尚未推送远端、尚未配置 release 流程。
 
-[Unreleased]: https://github.com/ZhouXiaoXian233/PeerServe/compare/v0.2.7...HEAD
+[Unreleased]: https://github.com/ZhouXiaoXian233/PeerServe/compare/v0.2.8...HEAD
+[0.2.8]: https://github.com/ZhouXiaoXian233/PeerServe/compare/v0.2.7...v0.2.8
 [0.2.7]: https://github.com/ZhouXiaoXian233/PeerServe/compare/v0.2.6...v0.2.7
 [0.2.6]: https://github.com/ZhouXiaoXian233/PeerServe/compare/v0.2.5...v0.2.6
 [0.2.5]: https://github.com/ZhouXiaoXian233/PeerServe/compare/v0.2.4...v0.2.5

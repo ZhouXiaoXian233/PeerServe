@@ -78,6 +78,21 @@ class HomePage extends StatelessWidget {
                     );
                   },
                 ),
+                if (session.bootstrapError != null) ...[
+                  const SizedBox(height: 16),
+                  Card(
+                    color: Theme.of(context).colorScheme.errorContainer,
+                    child: Padding(
+                      padding: const EdgeInsets.all(16),
+                      child: SelectableText(
+                        session.bootstrapError!,
+                        style: TextStyle(
+                          color: Theme.of(context).colorScheme.onErrorContainer,
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
                 const SizedBox(height: 26),
                 Row(
                   children: [

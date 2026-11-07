@@ -10,6 +10,7 @@ export 'src/did.dart';
 export 'src/envelope.dart';
 export 'src/errors.dart';
 export 'src/ids.dart';
+export 'src/int_field.dart';
 export 'src/json_value.dart';
 export 'src/limits.dart';
 export 'src/message_type.dart';

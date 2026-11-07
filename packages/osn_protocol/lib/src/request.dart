@@ -5,6 +5,7 @@ import 'base64url.dart';
 import 'did.dart';
 import 'errors.dart';
 import 'ids.dart';
+import 'int_field.dart';
 import 'json_value.dart';
 import 'timestamp.dart';
 
@@ -478,29 +479,7 @@ int _requireInt(Map<String, Object?> map, String key, String path) {
       field: path,
     );
   }
-  final value = map[key];
-  if (value is double) {
-    throw ProtocolException(
-      ProtocolErrorCode.floatNotAllowed,
-      '$key 不允许浮点数',
-      field: path,
-    );
-  }
-  if (value is! int) {
-    throw ProtocolException(
-      ProtocolErrorCode.invalidField,
-      '$key 必须是整数',
-      field: path,
-    );
-  }
-  if (value < -maxSafeInteger || value > maxSafeInteger) {
-    throw ProtocolException(
-      ProtocolErrorCode.integerOutOfRange,
-      '$key 超出安全整数范围',
-      field: path,
-    );
-  }
-  return value;
+  return requireProtocolInt(map[key], field: path);
 }
 
 int? _optionalInt(Map<String, Object?> map, String key, String path) {
