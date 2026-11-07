@@ -54,4 +54,28 @@ void main() {
     expect(session.requests.first.isSample, isFalse);
     expect(find.text('我的新需求'), findsOneWidget);
   });
+
+  testWidgets('类别筛选只显示对应需求', (tester) async {
+    tester.view.physicalSize = const Size(1080, 2400);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.reset);
+
+    final session = AppSession();
+    addTearDown(session.dispose);
+    await session.bootstrap();
+
+    await tester.pumpWidget(
+      AppScope(
+        session: session,
+        child: const MaterialApp(home: RequestsPage()),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.widgetWithText(ChoiceChip, '餐饮'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('拼单带一份午餐'), findsOneWidget);
+    expect(find.text('帮忙取一份快递'), findsNothing);
+  });
 }

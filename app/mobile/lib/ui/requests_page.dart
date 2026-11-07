@@ -22,6 +22,7 @@ class RequestsPage extends StatefulWidget {
 
 class _RequestsPageState extends State<RequestsPage> {
   bool _didOpenComposer = false;
+  RequestCategory? _filter;
 
   @override
   void initState() {
@@ -53,7 +54,7 @@ class _RequestsPageState extends State<RequestsPage> {
     final textTheme = Theme.of(context).textTheme;
 
     return Scaffold(
-      appBar: AppBar(title: const Text('本机需求')),
+      appBar: AppBar(title: const Text('需求')),
       floatingActionButton: FloatingActionButton.extended(
         key: RequestsPage.publishButtonKey,
         onPressed: _openComposer,
@@ -97,21 +98,56 @@ class _RequestsPageState extends State<RequestsPage> {
               );
             }
 
+            final filtered = _filter == null
+                ? session.requests
+                : session.requests
+                      .where((item) => item.request.category == _filter)
+                      .toList();
+
             return ListView(
-              padding: const EdgeInsets.fromLTRB(16, 8, 16, 96),
+              padding: const EdgeInsets.fromLTRB(16, 4, 16, 96),
               children: [
+                SingleChildScrollView(
+                  scrollDirection: Axis.horizontal,
+                  padding: const EdgeInsets.symmetric(vertical: 4),
+                  child: Row(
+                    children: [
+                      ChoiceChip(
+                        label: const Text('全部'),
+                        selected: _filter == null,
+                        onSelected: (_) => setState(() => _filter = null),
+                      ),
+                      for (final category in RequestCategory.values) ...[
+                        const SizedBox(width: 8),
+                        ChoiceChip(
+                          label: Text(_categoryLabel(category)),
+                          selected: _filter == category,
+                          onSelected: (_) => setState(() => _filter = category),
+                        ),
+                      ],
+                    ],
+                  ),
+                ),
                 Padding(
-                  padding: const EdgeInsets.fromLTRB(4, 0, 4, 8),
+                  padding: const EdgeInsets.fromLTRB(4, 10, 4, 8),
                   child: Text(
-                    _listSummary(session.requests),
+                    _listSummary(filtered),
                     style: textTheme.bodySmall,
                   ),
                 ),
-                for (final item in session.requests)
-                  Padding(
-                    padding: const EdgeInsets.only(bottom: 12),
-                    child: _RequestCard(item: item),
-                  ),
+                if (filtered.isEmpty)
+                  Card(
+                    child: Padding(
+                      padding: const EdgeInsets.all(20),
+                      child: Text('这个类别还没有需求。', style: textTheme.bodyMedium),
+                    ),
+                  )
+                else
+                  for (final item in filtered)
+                    Padding(
+                      padding: const EdgeInsets.only(bottom: 12),
+                      child: _RequestCard(item: item),
+                    ),
               ],
             );
           },

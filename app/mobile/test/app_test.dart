@@ -7,8 +7,8 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('信约阁'), findsOneWidget);
-    expect(find.text('PeerServe'), findsOneWidget);
+    expect(find.text('今天，帮个忙？'), findsOneWidget);
     expect(find.text('发布需求'), findsOneWidget);
-    expect(find.textContaining('查看需求'), findsOneWidget);
+    expect(find.textContaining('浏览'), findsOneWidget);
   });
 }

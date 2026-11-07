@@ -127,7 +127,7 @@ dart format --output=none --set-exit-if-changed app/mobile/lib app/mobile/test p
 | --- | --- | --- |
 | Phase 0.1 | Flutter 骨架、目录约定、CI、文档基线 | ✅ |
 | Phase 0.2 | 协议规范化（无浮点 JCS）+ Ed25519 + did:key + 信封（含测试向量） | ✅ 基础完成 |
-| Phase 0.2b | Request v1 + 本机签名公告板 + 发布表单 + 个人中心 | ✅ |
+| Phase 0.2b | Request v1 + 本机签名公告板 + 发布表单 + 个人中心 + 类别筛选 | ✅ |
 | Phase 0.2c | Offer / Agreement / Event / Review 业务模型 | ⬜ 下一步 |
 | Phase 0.3 | SQLite 持久化与重启恢复验证 | ⬜ |
 | Phase 1 | 纯本地业务核心：发布→响应→签署→事件→评价 | ⬜ |
@@ -139,7 +139,7 @@ dart format --output=none --set-exit-if-changed app/mobile/lib app/mobile/test p
 - `osn_protocol`：无浮点 JCS 子集、严格 JSON（重复键/浮点/大小/深度）、信封模型与校验、Request v1 模型（类别/地点/时间窗/价格/nonce）；
 - `osn_identity`：Ed25519 种子派生、签名/验签、`did:key` 编解码、按 `sender_id` 独立验签；
 - 固定向量：RFC 8032 TEST 1–3、JCS 用例、固定信封签名；
-- UI：首页 → “发布需求 / 查看需求 / 本机身份 / 个人中心”；发布表单会签名并立即验签，技术详情只在 debug 构建显示。
+- UI：暖纸主题 + 渐变 Hero；首页 → “发布需求 / 最近需求 / 本机身份 / 个人中心”；需求列表支持类别筛选；技术详情只在 debug 构建显示。
 - 启动时放入 4 条明确标记“示例”的签名需求，用于在没有其他节点时查看列表形态；它们不是真实用户。
 
 未实现：Offer / Agreement / Event / Review、数据库、网络传输、P2P 发现、真实交易流程。**当前版本不能用于任何真实交易。**

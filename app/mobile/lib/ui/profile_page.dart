@@ -92,25 +92,54 @@ class _ProfilePageState extends State<ProfilePage> {
           child: ListView(
             padding: const EdgeInsets.fromLTRB(20, 12, 20, 32),
             children: [
-              Center(
-                child: Column(
+              Container(
+                padding: const EdgeInsets.all(20),
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(24),
+                  gradient: LinearGradient(
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                    colors: [
+                      Theme.of(context).colorScheme.primary,
+                      const Color(0xFF3F8A70),
+                    ],
+                  ),
+                ),
+                child: Row(
                   children: [
                     CircleAvatar(
-                      radius: 36,
+                      radius: 34,
+                      backgroundColor: Colors.white.withValues(alpha: 0.18),
                       child: Text(
                         _avatar,
                         style: const TextStyle(fontSize: 34),
                       ),
                     ),
-                    const SizedBox(height: 8),
-                    Text(
-                      _nickname?.text.trim().isEmpty ?? true
-                          ? '本机用户'
-                          : _nickname!.text.trim(),
-                      style: textTheme.titleMedium,
+                    const SizedBox(width: 16),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            _nickname?.text.trim().isEmpty ?? true
+                                ? '本机用户'
+                                : _nickname!.text.trim(),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: textTheme.titleLarge?.copyWith(
+                              color: Colors.white,
+                            ),
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            '资料仅保存在本机 · 不进入身份标识',
+                            style: textTheme.bodySmall?.copyWith(
+                              color: Colors.white.withValues(alpha: 0.8),
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
-                    const SizedBox(height: 2),
-                    Text('资料仅保存在本机', style: textTheme.bodySmall),
                   ],
                 ),
               ),

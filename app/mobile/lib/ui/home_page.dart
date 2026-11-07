@@ -5,10 +5,9 @@ import 'identity_page.dart';
 import 'profile_page.dart';
 import 'requests_page.dart';
 
-/// 首页：只保留主操作、需求入口与个人中心。
+/// 首页：主操作、最近需求与本机身份。
 ///
-/// 技术细节（公钥、规范化 JSON、签名）放在 debug 构建的“开发者详情”里，
-/// 首页不展示路线图、功能清单或长篇边界说明。
+/// 技术细节只在 debug 构建的“开发者详情”里；首页不展示路线图或长篇说明。
 class HomePage extends StatelessWidget {
   const HomePage({super.key});
 
@@ -20,7 +19,6 @@ class HomePage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final session = AppScope.of(context);
-    final textTheme = Theme.of(context).textTheme;
 
     return Scaffold(
       appBar: AppBar(
@@ -40,83 +38,91 @@ class HomePage extends StatelessWidget {
                   );
                 },
                 icon: CircleAvatar(
-                  radius: 16,
+                  radius: 18,
                   child: Text(
                     session.profile.avatar,
-                    style: const TextStyle(fontSize: 16),
+                    style: const TextStyle(fontSize: 17),
                   ),
                 ),
               );
             },
           ),
-          const Padding(
-            padding: EdgeInsets.only(right: 16),
-            child: Center(
-              child: Text(
-                'PeerServe',
-                style: TextStyle(fontSize: 12, letterSpacing: 1.2),
-              ),
-            ),
-          ),
+          const SizedBox(width: 8),
         ],
       ),
       body: SafeArea(
         child: ListenableBuilder(
           listenable: session,
           builder: (context, child) {
+            final textTheme = Theme.of(context).textTheme;
+            final recent = session.requests.take(2).toList();
+
             return ListView(
-              padding: const EdgeInsets.fromLTRB(20, 12, 20, 32),
+              padding: const EdgeInsets.fromLTRB(20, 4, 20, 32),
               children: [
-                const SizedBox(height: 12),
-                Text(
-                  '你好，${session.profile.nickname}',
-                  style: textTheme.titleMedium,
-                ),
-                const SizedBox(height: 6),
-                Text(
-                  '附近的小协作，\n自己约定，自己留证。',
-                  style: textTheme.headlineMedium?.copyWith(
-                    height: 1.25,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-                const SizedBox(height: 12),
-                Text(
-                  '用本机身份发布需求，签名并保存可验证的记录。'
-                  '没有中心服务器，也没有平台替你裁决。',
-                  style: textTheme.bodyMedium,
-                ),
-                const SizedBox(height: 28),
-                FilledButton.icon(
-                  key: publishButtonKey,
-                  onPressed: () {
+                _HeroCard(
+                  nickname: session.profile.nickname,
+                  requestCount: session.requests.length,
+                  onPublish: () {
                     Navigator.of(context).push(
                       MaterialPageRoute<void>(
                         builder: (_) => const RequestsPage(openComposer: true),
                       ),
                     );
                   },
-                  icon: const Icon(Icons.add),
-                  label: const Text('发布需求'),
-                ),
-                const SizedBox(height: 10),
-                OutlinedButton.icon(
-                  key: browseButtonKey,
-                  onPressed: () {
+                  onBrowse: () {
                     Navigator.of(context).push(
                       MaterialPageRoute<void>(
                         builder: (_) => const RequestsPage(),
                       ),
                     );
                   },
-                  icon: const Icon(Icons.list_alt_outlined),
-                  label: Text(
-                    session.requests.isEmpty
-                        ? '查看需求'
-                        : '查看需求（${session.requests.length}）',
-                  ),
                 ),
-                const SizedBox(height: 28),
+                const SizedBox(height: 26),
+                Row(
+                  children: [
+                    Text('最近需求', style: textTheme.titleLarge),
+                    const Spacer(),
+                    TextButton(
+                      key: browseButtonKey,
+                      onPressed: () {
+                        Navigator.of(context).push(
+                          MaterialPageRoute<void>(
+                            builder: (_) => const RequestsPage(),
+                          ),
+                        );
+                      },
+                      child: const Text('查看全部'),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 8),
+                if (recent.isEmpty)
+                  Card(
+                    child: Padding(
+                      padding: const EdgeInsets.all(20),
+                      child: Text(
+                        '还没有需求。发布第一条，或者稍后查看示例。',
+                        style: textTheme.bodyMedium,
+                      ),
+                    ),
+                  )
+                else
+                  for (final item in recent)
+                    Padding(
+                      padding: const EdgeInsets.only(bottom: 10),
+                      child: _HomeRequestTile(
+                        item: item,
+                        onTap: () {
+                          Navigator.of(context).push(
+                            MaterialPageRoute<void>(
+                              builder: (_) => const RequestsPage(),
+                            ),
+                          );
+                        },
+                      ),
+                    ),
+                const SizedBox(height: 18),
                 _IdentityTile(
                   session: session,
                   onTap: () {
@@ -127,11 +133,178 @@ class HomePage extends StatelessWidget {
                     );
                   },
                 ),
-                const SizedBox(height: 24),
+                const SizedBox(height: 20),
                 const _LimitNotice(),
               ],
             );
           },
+        ),
+      ),
+    );
+  }
+}
+
+class _HeroCard extends StatelessWidget {
+  const _HeroCard({
+    required this.nickname,
+    required this.requestCount,
+    required this.onPublish,
+    required this.onBrowse,
+  });
+
+  final String nickname;
+  final int requestCount;
+  final VoidCallback onPublish;
+  final VoidCallback onBrowse;
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    final textTheme = Theme.of(context).textTheme;
+
+    return Container(
+      padding: const EdgeInsets.fromLTRB(22, 22, 22, 18),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(26),
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [
+            scheme.primary,
+            const Color(0xFF2F7A63),
+            const Color(0xFF3F8A70),
+          ],
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            '你好，$nickname',
+            style: textTheme.labelLarge?.copyWith(
+              color: scheme.onPrimary.withValues(alpha: 0.8),
+            ),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            '今天，帮个忙？',
+            style: textTheme.headlineMedium?.copyWith(
+              color: scheme.onPrimary,
+              fontSize: 32,
+            ),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            '发布一条附近的小需求，签名后各自留证。'
+            '没有中心服务器，也没有平台替你裁决。',
+            style: textTheme.bodyMedium?.copyWith(
+              color: scheme.onPrimary.withValues(alpha: 0.85),
+            ),
+          ),
+          const SizedBox(height: 20),
+          SizedBox(
+            width: double.infinity,
+            child: FilledButton.icon(
+              key: HomePage.publishButtonKey,
+              onPressed: onPublish,
+              style: FilledButton.styleFrom(
+                backgroundColor: scheme.onPrimary,
+                foregroundColor: scheme.primary,
+              ),
+              icon: const Icon(Icons.add),
+              label: const Text('发布需求'),
+            ),
+          ),
+          const SizedBox(height: 4),
+          SizedBox(
+            width: double.infinity,
+            child: TextButton.icon(
+              onPressed: onBrowse,
+              style: TextButton.styleFrom(foregroundColor: scheme.onPrimary),
+              icon: const Icon(Icons.explore_outlined),
+              label: Text(requestCount == 0 ? '浏览需求' : '浏览 $requestCount 条需求'),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _HomeRequestTile extends StatelessWidget {
+  const _HomeRequestTile({required this.item, required this.onTap});
+
+  final SignedRequest item;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    final textTheme = Theme.of(context).textTheme;
+    final request = item.request;
+
+    return Card(
+      clipBehavior: Clip.antiAlias,
+      child: InkWell(
+        onTap: onTap,
+        child: Padding(
+          padding: const EdgeInsets.all(14),
+          child: Row(
+            children: [
+              CircleAvatar(
+                radius: 20,
+                backgroundColor: scheme.secondaryContainer,
+                child: Text(
+                  item.authorAvatar,
+                  style: const TextStyle(fontSize: 18),
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Expanded(
+                          child: Text(
+                            request.title,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: textTheme.titleMedium,
+                          ),
+                        ),
+                        if (item.isSample)
+                          Text(
+                            '示例',
+                            style: textTheme.labelSmall?.copyWith(
+                              color: scheme.onSurfaceVariant,
+                            ),
+                          ),
+                      ],
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      '${request.origin?.label ?? '未指定'} → '
+                      '${request.destination?.label ?? '未指定'}',
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: textTheme.bodySmall,
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      _formatAmount(request.price.amountMinor),
+                      style: textTheme.labelMedium?.copyWith(
+                        color: scheme.primary,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(width: 8),
+              Icon(Icons.chevron_right, color: scheme.outline),
+            ],
+          ),
         ),
       ),
     );
@@ -192,10 +365,10 @@ class _LimitNotice extends StatelessWidget {
     final textTheme = Theme.of(context).textTheme;
 
     return Container(
-      padding: const EdgeInsets.all(12),
+      padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
         color: scheme.surfaceContainerHighest,
-        borderRadius: BorderRadius.circular(10),
+        borderRadius: BorderRadius.circular(16),
       ),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -212,4 +385,10 @@ class _LimitNotice extends StatelessWidget {
       ),
     );
   }
+}
+
+String _formatAmount(int amountMinor) {
+  final major = amountMinor ~/ 100;
+  final cents = (amountMinor % 100).toString().padLeft(2, '0');
+  return 'CNY $major.$cents';
 }

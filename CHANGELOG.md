@@ -9,6 +9,21 @@
 - Phase 0.2c：Offer / Agreement / Event / Review 业务对象模型与字段校验
 - Phase 0.3：SQLite 持久化与重启恢复验证
 
+## [0.2.4] - 2026-11-07
+
+### 变更
+
+- 重做视觉主题：暖纸背景、深绿主色、陶土强调、圆角卡片、更宽松的排版与按钮/输入框样式。
+- 首页改为渐变 Hero + “最近需求”预览 + 本机身份入口，减少纯文字说明。
+- 个人中心改为渐变资料头 + 表单，头像与昵称更醒目。
+- 需求列表增加“全部 / 出行 / 带物 / 餐饮 / 跑腿 / 其他”类别筛选。
+- 应用版本提升到 `0.2.4+6`。
+
+### 说明
+
+- 开发者详情 / 技术详情仍只在 `kDebugMode` 显示。
+- 功能清单仍在 [`docs/FEATURES.md`](docs/FEATURES.md)，不在应用内。
+
 ## [0.2.3] - 2026-11-07
 
 ### 新增
@@ -104,7 +119,8 @@
 - 本版本**不含**身份、签名、数据库、网络与任何业务逻辑；不可用于真实交易。
 - 尚未推送远端、尚未配置 release 流程。
 
-[Unreleased]: https://github.com/ZhouXiaoXian233/PeerServe/compare/v0.2.3...HEAD
+[Unreleased]: https://github.com/ZhouXiaoXian233/PeerServe/compare/v0.2.4...HEAD
+[0.2.4]: https://github.com/ZhouXiaoXian233/PeerServe/compare/v0.2.3...v0.2.4
 [0.2.3]: https://github.com/ZhouXiaoXian233/PeerServe/compare/v0.2.2...v0.2.3
 [0.2.2]: https://github.com/ZhouXiaoXian233/PeerServe/compare/v0.2.1...v0.2.2
 [0.2.1]: https://github.com/ZhouXiaoXian233/PeerServe/compare/v0.2.0...v0.2.1
