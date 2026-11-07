@@ -58,7 +58,7 @@ PeerServe/
 │   ├── lib/
 │   │   ├── main.dart             # 入口
 │   │   ├── app.dart              # MaterialApp + 路由
-│   │   └── ui/                   # 首页、身份、需求公告板、功能清单、主题
+│   │   └── ui/                   # 首页、身份、需求公告板、主题
 │   ├── test/                     # widget / 导航 / 身份 / 公告板测试
 │   ├── android/                  # Android 宿主工程（发布目标）
 │   └── web/                      # 本地预览宿主（非发布目标）

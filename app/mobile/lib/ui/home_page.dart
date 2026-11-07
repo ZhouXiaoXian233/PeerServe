@@ -1,34 +1,28 @@
 import 'package:flutter/material.dart';
 
-import 'features_page.dart';
+import '../app_session.dart';
 import 'identity_page.dart';
 import 'requests_page.dart';
 
-/// 首页。
+/// 首页：只保留主操作与本机身份入口。
 ///
-/// Phase 0.2 的职责：
-/// 1. 让人一眼看出这是**什么项目**、现在到哪一步；
-/// 2. 明确标出"哪些能力还不存在"，避免把设计文档当成已实现功能；
-/// 3. 提供真实可操作的入口：内存身份、签名需求公告板、功能清单。
-///
-/// 仍然禁用或尚不存在的按钮/功能不会被伪装成成功路径。
+/// 技术细节（公钥、规范化 JSON、签名）放在身份页的“开发者详情”里，
+/// 首页不展示路线图、功能清单或长篇边界说明。
 class HomePage extends StatelessWidget {
   const HomePage({super.key});
 
-  static const createIdentityButtonKey = Key('home.createIdentityButton');
-  static const requestsButtonKey = Key('home.requestsButton');
-  static const featuresButtonKey = Key('home.featuresButton');
-
-  static const phaseLabel = 'Phase 0.2';
-  static const titleText = '信约阁';
+  static const publishButtonKey = Key('home.publish');
+  static const browseButtonKey = Key('home.browse');
+  static const identityTileKey = Key('home.identity');
 
   @override
   Widget build(BuildContext context) {
+    final session = AppScope.of(context);
     final textTheme = Theme.of(context).textTheme;
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text(titleText),
+        title: const Text('信约阁'),
         actions: const [
           Padding(
             padding: EdgeInsets.only(right: 16),
@@ -42,94 +36,42 @@ class HomePage extends StatelessWidget {
         ],
       ),
       body: SafeArea(
-        child: ListView(
-          padding: const EdgeInsets.fromLTRB(16, 8, 16, 32),
-          children: [
-            _IntroCard(textTheme: textTheme),
-            const SizedBox(height: 16),
-            _PlannedFeaturesCard(textTheme: textTheme),
-            const SizedBox(height: 16),
-            _BoundariesCard(textTheme: textTheme),
-            const SizedBox(height: 24),
-            const Center(
-              child: Text(
-                'v0.2.1 · MIT License · 无中心业务服务器',
-                style: TextStyle(fontSize: 12),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-/// 当前阶段与"哪些能力已实现 / 未实现"的说明。
-class _IntroCard extends StatelessWidget {
-  const _IntroCard({required this.textTheme});
-
-  final TextTheme textTheme;
-
-  @override
-  Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
-
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
+        child: ListenableBuilder(
+          listenable: session,
+          builder: (context, child) {
+            return ListView(
+              padding: const EdgeInsets.fromLTRB(20, 12, 20, 32),
               children: [
-                Chip(
-                  label: const Text(HomePage.phaseLabel),
-                  visualDensity: VisualDensity.compact,
-                  backgroundColor: scheme.secondaryContainer,
-                  side: BorderSide.none,
+                const SizedBox(height: 12),
+                Text(
+                  '附近的小协作，\n自己约定，自己留证。',
+                  style: textTheme.headlineMedium?.copyWith(
+                    height: 1.25,
+                    fontWeight: FontWeight.w600,
+                  ),
                 ),
-                const SizedBox(width: 8),
-                Text('协议 · 身份 · 公告板', style: textTheme.titleMedium),
-              ],
-            ),
-            const SizedBox(height: 12),
-            Text(
-              '一个无中心业务服务器的 P2P 需求公告板：'
-              '用你自己的密钥发布需求、签署协议，并各自保存可验证的记录。',
-              style: textTheme.bodyMedium,
-            ),
-            const SizedBox(height: 12),
-            Container(
-              padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(
-                color: scheme.surfaceContainerHighest,
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: Text(
-                '当前版本可以生成内存身份、发布并签名本机需求；'
-                '数据库、P2P 网络与 Offer/Agreement 流程尚未实现。'
-                '它不能用于任何真实交易。',
-                style: textTheme.bodySmall,
-              ),
-            ),
-            const SizedBox(height: 16),
-            Wrap(
-              spacing: 8,
-              runSpacing: 8,
-              children: [
-                FilledButton(
-                  key: HomePage.createIdentityButtonKey,
+                const SizedBox(height: 12),
+                Text(
+                  '用本机身份发布需求，签名并保存可验证的记录。'
+                  '没有中心服务器，也没有平台替你裁决。',
+                  style: textTheme.bodyMedium,
+                ),
+                const SizedBox(height: 28),
+                FilledButton.icon(
+                  key: publishButtonKey,
                   onPressed: () {
                     Navigator.of(context).push(
                       MaterialPageRoute<void>(
-                        builder: (_) => const IdentityPage(),
+                        builder: (_) => const RequestsPage(openComposer: true),
                       ),
                     );
                   },
-                  child: const Text('身份与签名演示'),
+                  icon: const Icon(Icons.add),
+                  label: const Text('发布需求'),
                 ),
-                FilledButton.tonal(
-                  key: HomePage.requestsButtonKey,
+                const SizedBox(height: 10),
+                OutlinedButton.icon(
+                  key: browseButtonKey,
                   onPressed: () {
                     Navigator.of(context).push(
                       MaterialPageRoute<void>(
@@ -137,116 +79,106 @@ class _IntroCard extends StatelessWidget {
                       ),
                     );
                   },
-                  child: const Text('需求公告板'),
+                  icon: const Icon(Icons.list_alt_outlined),
+                  label: Text(
+                    session.requests.isEmpty
+                        ? '查看本机需求'
+                        : '查看本机需求（${session.requests.length}）',
+                  ),
                 ),
-                OutlinedButton(
-                  key: HomePage.featuresButtonKey,
-                  onPressed: () {
+                const SizedBox(height: 28),
+                _IdentityTile(
+                  session: session,
+                  onTap: () {
                     Navigator.of(context).push(
                       MaterialPageRoute<void>(
-                        builder: (_) => const FeaturesPage(),
+                        builder: (_) => const IdentityPage(),
                       ),
                     );
                   },
-                  child: const Text('功能清单'),
                 ),
+                const SizedBox(height: 24),
+                const _LimitNotice(),
               ],
-            ),
-          ],
+            );
+          },
         ),
       ),
     );
   }
 }
 
-/// 按阶段列出"将会出现"的能力，避免用户误以为只是自己没找到入口。
-class _PlannedFeaturesCard extends StatelessWidget {
-  const _PlannedFeaturesCard({required this.textTheme});
+class _IdentityTile extends StatelessWidget {
+  const _IdentityTile({required this.session, required this.onTap});
 
-  final TextTheme textTheme;
-
-  static const _items = <({IconData icon, String label, String phase})>[
-    (icon: Icons.key_outlined, label: '生成内存身份与信封签名', phase: 'Phase 0.2'),
-    (icon: Icons.campaign_outlined, label: '发布并签名本机需求', phase: 'Phase 0.2b'),
-    (icon: Icons.shield_outlined, label: '身份加密备份', phase: 'Phase 1'),
-    (
-      icon: Icons.handshake_outlined,
-      label: 'Offer / Agreement / 事件 / 评价',
-      phase: 'Phase 1',
-    ),
-    (icon: Icons.devices_other_outlined, label: '两台设备直连', phase: 'Phase 2'),
-    (icon: Icons.travel_explore_outlined, label: '附近公告发现与缓存', phase: 'Phase 4'),
-  ];
+  final AppSession session;
+  final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
+    final identity = session.identity;
+
+    if (identity == null) {
+      return Card(
+        child: ListTile(
+          leading: const SizedBox(
+            width: 24,
+            height: 24,
+            child: CircularProgressIndicator(strokeWidth: 2),
+          ),
+          title: Text(session.identityError ?? '正在生成本机身份…'),
+        ),
+      );
+    }
 
     return Card(
-      child: Padding(
-        padding: const EdgeInsets.symmetric(vertical: 8),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Padding(
-              padding: const EdgeInsets.fromLTRB(16, 8, 16, 4),
-              child: Text('开发路线', style: textTheme.titleSmall),
-            ),
-            for (final item in _items)
-              ListTile(
-                dense: true,
-                leading: Icon(item.icon, size: 20),
-                title: Text(item.label),
-                trailing: Text(
-                  item.phase,
-                  style: textTheme.labelSmall?.copyWith(
-                    color: scheme.onSurfaceVariant,
-                  ),
-                ),
-              ),
-          ],
+      child: ListTile(
+        key: HomePage.identityTileKey,
+        onTap: onTap,
+        leading: CircleAvatar(
+          backgroundColor: scheme.secondaryContainer,
+          child: Icon(Icons.key_outlined, color: scheme.onSecondaryContainer),
         ),
+        title: const Text('本机身份'),
+        subtitle: Text(
+          identity.identityId,
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+          style: const TextStyle(fontFamily: 'monospace', fontSize: 12),
+        ),
+        trailing: const Icon(Icons.chevron_right),
       ),
     );
   }
 }
 
-/// 不可越过的设计边界——写在首页，因为它们是产品承诺而不是免责声明。
-class _BoundariesCard extends StatelessWidget {
-  const _BoundariesCard({required this.textTheme});
-
-  final TextTheme textTheme;
-
-  static const _items = <String>[
-    '不托管资金、不担保履约：支付由双方约定的外部方式完成。',
-    '评价是参与者的主观意见，不是系统裁定的事实。',
-    '签名只证明"某把密钥签署了什么"，不证明现实一定发生。',
-    '有争议陈述不代表对方有过错；系统不会自动处罚任何人。',
-  ];
+class _LimitNotice extends StatelessWidget {
+  const _LimitNotice();
 
   @override
   Widget build(BuildContext context) {
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text('设计边界', style: textTheme.titleSmall),
-            const SizedBox(height: 8),
-            for (final line in _items)
-              Padding(
-                padding: const EdgeInsets.only(bottom: 6),
-                child: Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const Text('· '),
-                    Expanded(child: Text(line, style: textTheme.bodySmall)),
-                  ],
-                ),
-              ),
-          ],
-        ),
+    final scheme = Theme.of(context).colorScheme;
+    final textTheme = Theme.of(context).textTheme;
+
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: scheme.surfaceContainerHighest,
+        borderRadius: BorderRadius.circular(10),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Icon(Icons.info_outline, size: 18, color: scheme.onSurfaceVariant),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Text(
+              '当前为内存演示：重启后身份与需求会丢失，不能用于真实交易。',
+              style: textTheme.bodySmall,
+            ),
+          ),
+        ],
       ),
     );
   }

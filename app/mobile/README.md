@@ -1,6 +1,6 @@
 # app/mobile — PeerServe 客户端
 
-Flutter 应用（Android 优先；web 仅本地预览）。Phase 0.2b 已有首页、内存身份演示、内存需求公告板与功能清单；仍不含 Offer/Agreement、存储与网络。
+Flutter 应用（Android 优先；web 仅本地预览）。Phase 0.2b 已有首页、内存身份、需求公告板与发布表单；仍不含 Offer/Agreement、存储与网络。功能清单见仓库 [`../../docs/FEATURES.md`](../../docs/FEATURES.md)，不在应用内展示。
 
 ## 运行
 
@@ -25,13 +25,13 @@ dart format --output=none --set-exit-if-changed app/mobile/lib app/mobile/test
 ```text
 lib/
 ├── main.dart             # 入口
-├── app.dart              # MaterialApp、主题装配
+├── app.dart              # MaterialApp、主题装配、AppSession
+├── app_session.dart      # 本机身份与需求的共享内存会话
 └── ui/
     ├── theme.dart        # 配色与排版
-    ├── home_page.dart    # 首页（阶段说明、入口、边界）
-    ├── identity_page.dart# 内存身份、信封签名与篡改验签演示
-    ├── requests_page.dart# 内存需求公告板：签名 Request + 验签
-    └── features_page.dart# 已完成 / 部分完成 / 计划中
+    ├── home_page.dart    # 首页（发布 / 查看 / 身份）
+    ├── identity_page.dart# 身份状态 + 折叠的开发者详情
+    └── requests_page.dart# 需求列表 + 发布表单
 test/
 ├── app_test.dart         # 应用启动冒烟
 ├── home_page_test.dart   # 首页文案、导航、公告板发布

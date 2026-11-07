@@ -38,7 +38,7 @@
 ## 3. 当前仓库状态（Phase 0.2b）
 
 - `packages/osn_protocol` 与 `packages/osn_identity` 已创建，可用 `dart test` 独立验证。
-- `app/mobile` 是可运行的 Flutter 应用：首页 + 内存身份演示 + 内存需求公告板 + 功能清单；`web/` 仅用于本地预览。
+- `app/mobile` 是可运行的 Flutter 应用：首页 + 内存身份 + 内存需求公告板 + 发布表单；`web/` 仅用于本地预览。
 - 已实现：无浮点 JCS 子集、严格 JSON、信封、Ed25519、`did:key`、Request v1、固定测试向量。
 - 尚未实现：Offer / Agreement / Event / Review 等业务对象模型、数据库、网络、P2P 与真实交易流程。
 - 文档中描述的协议字段仍是**设计目标**；不要把未实现的业务对象当成已有 API 调用。

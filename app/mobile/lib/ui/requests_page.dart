@@ -1,215 +1,129 @@
-import 'dart:async';
-
 import 'package:flutter/material.dart';
-import 'package:osn_identity/osn_identity.dart';
 import 'package:osn_protocol/osn_protocol.dart';
 
-/// Phase 0.2b 的内存需求公告板。
-///
-/// 需求由本机临时身份签名，并立即用 `sender_id` 对应的公钥独立验签。
-/// 没有网络、没有数据库：列表只存在当前页面状态里，关闭即丢失。
+import '../app_session.dart';
+
+/// 本机需求列表。数据来自 [AppSession]，只在内存中。
 class RequestsPage extends StatefulWidget {
-  const RequestsPage({super.key});
+  const RequestsPage({super.key, this.openComposer = false});
 
   static const publishButtonKey = Key('requests.publish');
+  static const emptyPublishButtonKey = Key('requests.emptyPublish');
   static const emptyStateKey = Key('requests.empty');
+  static const titleFieldKey = Key('requests.title');
+  static const submitButtonKey = Key('requests.submit');
+
+  final bool openComposer;
 
   @override
   State<RequestsPage> createState() => _RequestsPageState();
 }
 
 class _RequestsPageState extends State<RequestsPage> {
-  PeerIdentity? _identity;
-  final List<_SignedRequest> _items = <_SignedRequest>[];
-  bool _busy = false;
-  String? _error;
+  bool _didOpenComposer = false;
 
   @override
   void initState() {
     super.initState();
-    unawaited(_bootstrap());
-  }
-
-  Future<void> _bootstrap() async {
-    setState(() {
-      _busy = true;
-      _error = null;
-    });
-    try {
-      final identity = await PeerIdentity.generate();
-      final first = await _createSignedRequest(identity, 0);
-      if (!mounted) {
-        return;
-      }
-      setState(() {
-        _identity = identity;
-        _items
-          ..clear()
-          ..add(first);
-        _busy = false;
-      });
-    } on Object catch (error) {
-      if (!mounted) {
-        return;
-      }
-      setState(() {
-        _busy = false;
-        _error = '初始化公告板失败：$error';
+    if (widget.openComposer) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted || _didOpenComposer) {
+          return;
+        }
+        _didOpenComposer = true;
+        _openComposer();
       });
     }
   }
 
-  Future<void> _publish() async {
-    final identity = _identity;
-    if (identity == null || _busy) {
-      return;
-    }
-    setState(() {
-      _busy = true;
-      _error = null;
-    });
-    try {
-      final item = await _createSignedRequest(identity, _items.length);
-      if (!mounted) {
-        return;
-      }
-      setState(() {
-        _items.insert(0, item);
-        _busy = false;
-      });
-    } on Object catch (error) {
-      if (!mounted) {
-        return;
-      }
-      setState(() {
-        _busy = false;
-        _error = '发布失败：$error';
-      });
-    }
-  }
-
-  Future<_SignedRequest> _createSignedRequest(
-    PeerIdentity identity,
-    int index,
-  ) async {
-    final now = DateTime.now().toUtc();
-    final createdAt = formatUtcTimestamp(now);
-    final expiresAt = formatUtcTimestamp(now.add(const Duration(hours: 2)));
-    final start = formatUtcTimestamp(now.add(const Duration(minutes: 30)));
-    final end = formatUtcTimestamp(now.add(const Duration(minutes: 90)));
-
-    final request = Request(
-      requestId: Request.newId(),
-      creatorId: identity.identityId,
-      category: RequestCategory.values[index % 3],
-      title: _demoTitles[index % _demoTitles.length],
-      description: '这是本机生成的内存示例需求；没有网络，也不会广播。',
-      origin: Place(label: _demoPlaces[index % _demoPlaces.length]),
-      destination: Place(label: _demoPlaces[(index + 1) % _demoPlaces.length]),
-      timeWindow: TimeWindow(start: start, end: end),
-      price: const Price(amountMinor: 5000, currency: 'CNY'),
-      createdAt: createdAt,
-      expiresAt: expiresAt,
-      nonce: Request.newNonce(),
-    );
-
-    // 先经过一次模型校验，避免把 UI 里的笔误签进信封。
-    final validated = Request.fromJson(request.toJson());
-    final envelope = await identity.signEnvelope(
-      type: MessageType.requestCreated,
-      sentAt: createdAt,
-      payload: validated.toJson(),
-    );
-    final verified = await verifyEnvelopeSignature(envelope);
-    return _SignedRequest(
-      request: validated,
-      envelope: envelope,
-      verified: verified,
+  Future<void> _openComposer() {
+    final session = AppScope.of(context);
+    return showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      useSafeArea: true,
+      builder: (_) => _PublishSheet(session: session),
     );
   }
 
   @override
   Widget build(BuildContext context) {
+    final session = AppScope.of(context);
     final textTheme = Theme.of(context).textTheme;
 
     return Scaffold(
-      appBar: AppBar(title: const Text('需求公告板（内存）')),
+      appBar: AppBar(title: const Text('本机需求')),
+      floatingActionButton: FloatingActionButton.extended(
+        key: RequestsPage.publishButtonKey,
+        onPressed: _openComposer,
+        icon: const Icon(Icons.add),
+        label: const Text('发布需求'),
+      ),
       body: SafeArea(
-        child: ListView(
-          padding: const EdgeInsets.fromLTRB(16, 8, 16, 32),
-          children: [
-            Card(
-              child: Padding(
-                padding: const EdgeInsets.all(16),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text('本机内存公告板', style: textTheme.titleMedium),
-                    const SizedBox(height: 8),
-                    Text(
-                      '每条需求都由本机临时身份签名，并立即用 sender_id 对应的公钥独立验签。'
-                      '没有网络，所以只有这台设备能看到；关闭页面即丢失。',
-                      style: textTheme.bodySmall,
-                    ),
-                    const SizedBox(height: 12),
-                    FilledButton.icon(
-                      key: RequestsPage.publishButtonKey,
-                      onPressed: _busy ? null : _publish,
-                      icon: const Icon(Icons.add),
-                      label: const Text('发布示例需求'),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-            if (_error != null) ...[
-              const SizedBox(height: 16),
-              Card(
-                color: Theme.of(context).colorScheme.errorContainer,
-                child: Padding(
-                  padding: const EdgeInsets.all(16),
-                  child: Text(_error!),
-                ),
-              ),
-            ],
-            if (_busy && _items.isEmpty) ...[
-              const SizedBox(height: 32),
-              const Center(child: CircularProgressIndicator()),
-            ],
-            if (!_busy && _items.isEmpty) ...[
-              const SizedBox(height: 24),
-              const Center(
+        child: ListenableBuilder(
+          listenable: session,
+          builder: (context, child) {
+            if (session.requests.isEmpty) {
+              return Center(
                 key: RequestsPage.emptyStateKey,
-                child: Text('还没有需求'),
-              ),
-            ],
-            for (final item in _items) ...[
-              const SizedBox(height: 16),
-              _RequestCard(item: item),
-            ],
-          ],
+                child: Padding(
+                  padding: const EdgeInsets.all(32),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(
+                        Icons.campaign_outlined,
+                        size: 48,
+                        color: Theme.of(context).colorScheme.outline,
+                      ),
+                      const SizedBox(height: 12),
+                      Text('还没有需求', style: textTheme.titleMedium),
+                      const SizedBox(height: 6),
+                      Text(
+                        '发布一条本机需求，签名后立即验证。',
+                        style: textTheme.bodySmall,
+                        textAlign: TextAlign.center,
+                      ),
+                      const SizedBox(height: 20),
+                      FilledButton(
+                        key: RequestsPage.emptyPublishButtonKey,
+                        onPressed: _openComposer,
+                        child: const Text('发布第一条需求'),
+                      ),
+                    ],
+                  ),
+                ),
+              );
+            }
+
+            return ListView(
+              padding: const EdgeInsets.fromLTRB(16, 8, 16, 96),
+              children: [
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(4, 0, 4, 8),
+                  child: Text(
+                    '${session.requests.length} 条 · 只保存在这台设备的内存中',
+                    style: textTheme.bodySmall,
+                  ),
+                ),
+                for (final item in session.requests)
+                  Padding(
+                    padding: const EdgeInsets.only(bottom: 12),
+                    child: _RequestCard(item: item),
+                  ),
+              ],
+            );
+          },
         ),
       ),
     );
   }
 }
 
-class _SignedRequest {
-  const _SignedRequest({
-    required this.request,
-    required this.envelope,
-    required this.verified,
-  });
-
-  final Request request;
-  final Envelope envelope;
-  final bool verified;
-}
-
 class _RequestCard extends StatelessWidget {
   const _RequestCard({required this.item});
 
-  final _SignedRequest item;
+  final SignedRequest item;
 
   @override
   Widget build(BuildContext context) {
@@ -220,7 +134,7 @@ class _RequestCard extends StatelessWidget {
 
     return Card(
       child: Padding(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.fromLTRB(16, 16, 16, 4),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -239,63 +153,45 @@ class _RequestCard extends StatelessWidget {
                 ),
               ],
             ),
-            const SizedBox(height: 8),
-            Text(
-              '${_formatAmount(request.price)} · '
-              '${_shortTime(request.timeWindow.start)}–'
-              '${_shortTime(request.timeWindow.end)} UTC',
-              style: textTheme.bodyMedium,
-            ),
             const SizedBox(height: 6),
+            Text(_formatAmount(request.price), style: textTheme.titleSmall),
+            const SizedBox(height: 4),
             Text(
               '${request.origin?.label ?? '未指定起点'} → '
               '${request.destination?.label ?? '未指定终点'}',
               style: textTheme.bodySmall,
             ),
-            if (request.description.isNotEmpty) ...[
-              const SizedBox(height: 8),
-              Text(request.description, style: textTheme.bodySmall),
-            ],
-            const SizedBox(height: 12),
-            Wrap(
-              spacing: 8,
-              runSpacing: 8,
-              crossAxisAlignment: WrapCrossAlignment.center,
+            const SizedBox(height: 4),
+            Text(
+              '有效至 ${_shortTime(request.expiresAt)} UTC',
+              style: textTheme.bodySmall,
+            ),
+            const SizedBox(height: 10),
+            Row(
               children: [
-                Chip(
-                  avatar: Icon(
-                    item.verified
-                        ? Icons.verified_outlined
-                        : Icons.error_outline,
-                    size: 16,
+                Icon(
+                  item.verified ? Icons.verified_outlined : Icons.error_outline,
+                  size: 16,
+                  color: item.verified ? scheme.primary : scheme.error,
+                ),
+                const SizedBox(width: 6),
+                Text(
+                  item.verified ? '签名已在本机验证' : '验签失败',
+                  style: textTheme.labelSmall?.copyWith(
                     color: item.verified ? scheme.primary : scheme.error,
                   ),
-                  label: Text(item.verified ? '签名有效' : '验签失败'),
-                  visualDensity: VisualDensity.compact,
-                  backgroundColor: item.verified
-                      ? scheme.primaryContainer
-                      : scheme.errorContainer,
-                  side: BorderSide.none,
-                ),
-                Text(
-                  'request.created · ${_shortTime(request.createdAt)} UTC',
-                  style: textTheme.labelSmall,
                 ),
               ],
             ),
-            const SizedBox(height: 8),
-            SelectableText(
-              'request_id: ${request.requestId}',
-              style: textTheme.bodySmall?.copyWith(fontFamily: 'monospace'),
-            ),
             ExpansionTile(
               tilePadding: EdgeInsets.zero,
-              childrenPadding: EdgeInsets.zero,
-              title: Text('查看签名与规范化 JSON', style: textTheme.labelLarge),
+              childrenPadding: const EdgeInsets.only(bottom: 12),
+              title: Text('技术详情', style: textTheme.labelLarge),
               children: [
                 Align(
                   alignment: Alignment.centerLeft,
-                  child: Text(
+                  child: SelectableText(
+                    'request_id: ${request.requestId}\n'
                     'signature: ${item.envelope.signature}',
                     style: textTheme.bodySmall?.copyWith(
                       fontFamily: 'monospace',
@@ -326,9 +222,211 @@ class _RequestCard extends StatelessWidget {
   }
 }
 
-const List<String> _demoTitles = <String>['从图书馆带一本书', '帮忙取一份快递', '顺路带一杯咖啡'];
+class _PublishSheet extends StatefulWidget {
+  const _PublishSheet({required this.session});
 
-const List<String> _demoPlaces = <String>['图书馆', '东门', '地铁站', '便利店'];
+  final AppSession session;
+
+  @override
+  State<_PublishSheet> createState() => _PublishSheetState();
+}
+
+class _PublishSheetState extends State<_PublishSheet> {
+  final _formKey = GlobalKey<FormState>();
+  final _title = TextEditingController();
+  final _price = TextEditingController(text: '50');
+  final _origin = TextEditingController();
+  final _destination = TextEditingController();
+  final _description = TextEditingController();
+  RequestCategory _category = RequestCategory.delivery;
+  bool _submitting = false;
+
+  @override
+  void dispose() {
+    _title.dispose();
+    _price.dispose();
+    _origin.dispose();
+    _destination.dispose();
+    _description.dispose();
+    super.dispose();
+  }
+
+  Future<void> _submit() async {
+    if (!_formKey.currentState!.validate()) {
+      return;
+    }
+    final priceMinor = _parsePrice(_price.text);
+    if (priceMinor == null) {
+      return;
+    }
+
+    setState(() => _submitting = true);
+    try {
+      await widget.session.publish(
+        title: _title.text.trim(),
+        category: _category,
+        priceMinor: priceMinor,
+        description: _description.text.trim(),
+        originLabel: _origin.text,
+        destinationLabel: _destination.text,
+      );
+      if (mounted) {
+        Navigator.of(context).pop();
+      }
+    } on Object catch (error) {
+      if (mounted) {
+        setState(() => _submitting = false);
+        ScaffoldMessenger.of(context)
+            .showSnackBar(SnackBar(content: Text('发布失败：$error')));
+      }
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final textTheme = Theme.of(context).textTheme;
+
+    return Padding(
+      padding: EdgeInsets.only(
+        left: 20,
+        right: 20,
+        top: 16,
+        bottom: MediaQuery.viewInsetsOf(context).bottom + 20,
+      ),
+      child: SingleChildScrollView(
+        child: Form(
+          key: _formKey,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text('发布需求', style: textTheme.titleLarge),
+              const SizedBox(height: 4),
+              Text('签名后立即在本机验证；不会联网。', style: textTheme.bodySmall),
+              const SizedBox(height: 16),
+              TextFormField(
+                key: RequestsPage.titleFieldKey,
+                controller: _title,
+                maxLength: 120,
+                autofocus: true,
+                decoration: const InputDecoration(
+                  labelText: '需求标题',
+                  hintText: '例如：从图书馆带一本书',
+                ),
+                validator: (value) {
+                  if (value == null || value.trim().isEmpty) {
+                    return '请填写标题';
+                  }
+                  return null;
+                },
+              ),
+              const SizedBox(height: 8),
+              DropdownButtonFormField<RequestCategory>(
+                initialValue: _category,
+                decoration: const InputDecoration(labelText: '类别'),
+                items: [
+                  for (final category in RequestCategory.values)
+                    DropdownMenuItem(
+                      value: category,
+                      child: Text(_categoryLabel(category)),
+                    ),
+                ],
+                onChanged: (value) {
+                  if (value != null) {
+                    setState(() => _category = value);
+                  }
+                },
+              ),
+              const SizedBox(height: 8),
+              TextFormField(
+                controller: _price,
+                keyboardType: const TextInputType.numberWithOptions(
+                  decimal: true,
+                ),
+                decoration: const InputDecoration(
+                  labelText: '预算（CNY）',
+                  helperText: '只接受最多两位小数；协议层存整数分',
+                ),
+                validator: (value) {
+                  if (_parsePrice(value ?? '') == null) {
+                    return '请输入合法金额，例如 50 或 50.00';
+                  }
+                  return null;
+                },
+              ),
+              const SizedBox(height: 8),
+              Row(
+                children: [
+                  Expanded(
+                    child: TextFormField(
+                      controller: _origin,
+                      maxLength: 120,
+                      decoration: const InputDecoration(
+                        labelText: '起点（可选）',
+                        counterText: '',
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: TextFormField(
+                      controller: _destination,
+                      maxLength: 120,
+                      decoration: const InputDecoration(
+                        labelText: '终点（可选）',
+                        counterText: '',
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 8),
+              TextFormField(
+                controller: _description,
+                maxLength: 2000,
+                maxLines: 2,
+                decoration: const InputDecoration(
+                  labelText: '补充说明（可选）',
+                  counterText: '',
+                ),
+              ),
+              const SizedBox(height: 16),
+              SizedBox(
+                width: double.infinity,
+                child: FilledButton(
+                  key: RequestsPage.submitButtonKey,
+                  onPressed: _submitting ? null : _submit,
+                  child: _submitting
+                      ? const SizedBox(
+                          width: 18,
+                          height: 18,
+                          child: CircularProgressIndicator(strokeWidth: 2),
+                        )
+                      : const Text('签名发布'),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+int? _parsePrice(String input) {
+  final match = RegExp(r'^(\d{1,15})(?:\.(\d{1,2}))?$')
+      .firstMatch(input.trim());
+  if (match == null) {
+    return null;
+  }
+  final major = int.parse(match.group(1)!);
+  final cents = (match.group(2) ?? '').padRight(2, '0');
+  final amount = major * 100 + int.parse(cents);
+  if (amount > maxSafeInteger) {
+    return null;
+  }
+  return amount;
+}
 
 String _categoryLabel(RequestCategory category) => switch (category) {
   RequestCategory.ride => '出行',

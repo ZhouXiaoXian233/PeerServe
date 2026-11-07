@@ -9,6 +9,21 @@
 - Phase 0.2c：Offer / Agreement / Event / Review 业务对象模型与字段校验
 - Phase 0.3：SQLite 持久化与重启恢复验证
 
+## [0.2.2] - 2026-11-07
+
+### 变更
+
+- 功能清单移出应用，改为开发记录 [`docs/FEATURES.md`](docs/FEATURES.md)；页面不再展示路线图式内容。
+- 本机身份与需求改为共享 `AppSession`，页面之间不再各自生成身份。
+- 首页精简为“发布需求 / 查看本机需求 / 本机身份”三个入口，移除开发路线、设计边界长卡片。
+- 需求页增加真实发布表单（标题、类别、预算、起终点、说明），技术详情折叠隐藏。
+- 身份页只显示状态与身份标识；公钥、签名、规范化 JSON 与篡改测试收进“开发者详情”。
+- 应用版本提升到 `0.2.2+4`。
+
+### 说明
+
+- 仍为内存演示：重启后身份与需求都会丢失。
+
 ## [0.2.1] - 2026-11-07
 
 ### 新增
@@ -68,7 +83,8 @@
 - 本版本**不含**身份、签名、数据库、网络与任何业务逻辑；不可用于真实交易。
 - 尚未推送远端、尚未配置 release 流程。
 
-[Unreleased]: https://github.com/ZhouXiaoXian233/PeerServe/compare/v0.2.1...HEAD
+[Unreleased]: https://github.com/ZhouXiaoXian233/PeerServe/compare/v0.2.2...HEAD
+[0.2.2]: https://github.com/ZhouXiaoXian233/PeerServe/compare/v0.2.1...v0.2.2
 [0.2.1]: https://github.com/ZhouXiaoXian233/PeerServe/compare/v0.2.0...v0.2.1
 [0.2.0]: https://github.com/ZhouXiaoXian233/PeerServe/compare/v0.1.0...v0.2.0
 [0.1.0]: https://github.com/ZhouXiaoXian233/PeerServe/releases/tag/v0.1.0
