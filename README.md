@@ -1,5 +1,8 @@
 # 信约阁 · PeerServe
 
+[![CI](https://github.com/ZhouXiaoXian233/PeerServe/actions/workflows/ci.yml/badge.svg)](https://github.com/ZhouXiaoXian233/PeerServe/actions/workflows/ci.yml)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+
 > 一个开源、无中心业务服务器、以手机为节点的 P2P 需求公告板：直接发布需求、发现需求、联系服务提供者，并记录**参与者自己签名**的协议、事件与评价。
 
 **当前状态：Phase 0.1（工程骨架）——只能跑通 Flutter 应用外壳与测试，尚无身份、协议与网络功能。**
