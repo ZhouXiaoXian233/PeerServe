@@ -1,6 +1,6 @@
 # 架构
 
-> 状态：Phase 0.1 · 本文件描述**目标架构**与**当前实现**的差距。
+> 状态：Phase 0.2b · 本文件描述**目标架构**与**当前实现**的差距。
 
 ## 1. 分层
 
@@ -53,28 +53,31 @@
 
 ```text
 PeerServe/
-├── app/mobile/                 # ✅ 现在：Flutter 应用
+├── pubspec.yaml                  # ✅ workspace 根
+├── app/mobile/                   # ✅ Flutter 应用
 │   ├── lib/
-│   │   ├── main.dart           # 入口
-│   │   ├── app.dart            # MaterialApp + 路由
-│   │   └── ui/                 # 页面与主题
-│   ├── test/                   # widget / smoke 测试
-│   └── android/                # Android 宿主工程
-├── packages/                   # ⬜ 第二个垂直切片时才创建（ADR-011）
-│   ├── osn_protocol/           # Phase 0.2
-│   ├── osn_identity/           # Phase 0.2
-│   ├── osn_storage/            # Phase 0.3
-│   ├── osn_transport/          # Phase 2
-│   └── osn_trust_view/         # Phase 3
+│   │   ├── main.dart             # 入口
+│   │   ├── app.dart              # MaterialApp + 路由
+│   │   └── ui/                   # 首页、身份、需求公告板、功能清单、主题
+│   ├── test/                     # widget / 导航 / 身份 / 公告板测试
+│   ├── android/                  # Android 宿主工程（发布目标）
+│   └── web/                      # 本地预览宿主（非发布目标）
+├── packages/
+│   ├── osn_protocol/             # ✅ Phase 0.2：JCS、严格 JSON、信封、Request
+│   ├── osn_identity/             # ✅ Phase 0.2：Ed25519、did:key、验签
+│   ├── osn_storage/              # ⬜ Phase 0.3
+│   ├── osn_transport/            # ⬜ Phase 2
+│   └── osn_trust_view/           # ⬜ Phase 3
 ├── protocol/
-│   ├── schemas/                # ⬜ Phase 0.2 起：JSON Schema
-│   └── test-vectors/           # ⬜ Phase 0.2 起：跨语言签名向量
+│   ├── schemas/                  # ✅ envelope.v1.json
+│   └── test-vectors/             # ✅ jcs / ed25519 / envelope
+├── tool/                         # 固定信封向量生成脚本
 ├── docs/
 ├── .github/
 └── scripts/
 ```
 
-> 为什么现在只有 `app/mobile`：见 ADR-011。**不为目录完整性创建空壳包**——空包会让"看起来实现了"变成一种误导。
+> 为什么不是所有包都已存在：见 ADR-011。**不为目录完整性创建空壳包**——空包会让"看起来实现了"变成一种误导。
 
 ## 5. 一次典型流程（目标态）
 

@@ -35,25 +35,40 @@
 
 **完成后**说明：改动文件 / 实现了什么 / 真实运行的命令与结果 / 尚未实现的部分 / 如何手动验证。
 
-## 3. 当前仓库状态（Phase 0.1）
+## 3. 当前仓库状态（Phase 0.2b）
 
-- 只有 `app/mobile` 是可运行代码：Flutter 应用外壳 + 主题 + 基础 widget 测试。
-- `packages/` 下的纯 Dart 包**尚未创建**。不要为"目录完整"而建空壳；在对应 Phase 开始时创建。
-- 没有数据库、没有网络、没有身份。任何涉及交易、签名或 P2P 的代码都还不存在。
-- 文档中描述的协议字段是**设计目标**，不是已实现的事实；不要把它们当成已有 API 调用。
+- `packages/osn_protocol` 与 `packages/osn_identity` 已创建，可用 `dart test` 独立验证。
+- `app/mobile` 是可运行的 Flutter 应用：首页 + 内存身份演示 + 内存需求公告板 + 功能清单；`web/` 仅用于本地预览。
+- 已实现：无浮点 JCS 子集、严格 JSON、信封、Ed25519、`did:key`、Request v1、固定测试向量。
+- 尚未实现：Offer / Agreement / Event / Review 等业务对象模型、数据库、网络、P2P 与真实交易流程。
+- 文档中描述的协议字段仍是**设计目标**；不要把未实现的业务对象当成已有 API 调用。
 
 ## 4. 常用命令
 
+工作区根目录：
+
 ```bash
-cd app/mobile
-flutter pub get
-flutter analyze
-dart format --output=none --set-exit-if-changed lib test
-flutter test
-flutter run            # 需要设备/模拟器
+dart pub get
+dart test packages/osn_protocol
+dart test packages/osn_identity
 ```
 
-Windows 开发机若 `flutter` 不在 PATH，用 `D:\Tools\flutter\bin\flutter.bat`。
+应用：
+
+```bash
+flutter analyze app/mobile
+flutter test app/mobile
+flutter run                    # 需要设备/模拟器
+flutter run -d chrome          # 仅本地预览（web 非发布目标）
+```
+
+格式检查：
+
+```bash
+dart format --output=none --set-exit-if-changed app/mobile/lib app/mobile/test packages tool
+```
+
+Windows 开发机若 `flutter` 不在 PATH，用 `D:\Tools\flutter\bin\flutter.bat`，`dart` 用 `D:\Tools\flutter\bin\dart.bat`。
 
 ## 5. 硬性边界（不可越过的设计约束）
 

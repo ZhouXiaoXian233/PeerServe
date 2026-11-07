@@ -1,0 +1,53 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://peerserve.dev/schemas/envelope.v1.json",
+  "title": "PeerServe envelope v1",
+  "description": "签名信封。payload 的浮点数禁令由实现层校验（JSON Schema 无法完整表达）。",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "type",
+    "payload",
+    "sender_id",
+    "sent_at",
+    "signature"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": 1
+    },
+    "type": {
+      "enum": [
+        "request.created",
+        "request.updated",
+        "request.withdrawn",
+        "offer.created",
+        "offer.withdrawn",
+        "agreement.proposed",
+        "agreement.signed",
+        "service.started",
+        "completion.claimed",
+        "completion.confirmed",
+        "service.cancelled",
+        "dispute.statement_added",
+        "review.created"
+      ]
+    },
+    "payload": {
+      "type": "object"
+    },
+    "sender_id": {
+      "type": "string",
+      "pattern": "^did:key:z[1-9A-HJ-NP-Za-km-z]{46,64}$"
+    },
+    "sent_at": {
+      "type": "string",
+      "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{3}Z$"
+    },
+    "signature": {
+      "type": "string",
+      "pattern": "^[A-Za-z0-9_-]{86}$"
+    }
+  }
+}

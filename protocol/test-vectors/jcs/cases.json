@@ -1,0 +1,35 @@
+{
+  "description": "PeerServe 协议允许值域内的 JCS 向量（无浮点）。",
+  "cases": [
+    {
+      "name": "key-order-ascii",
+      "input": { "b": 1, "a": 2, "A": 3 },
+      "canonical": "{\"A\":3,\"a\":2,\"b\":1}"
+    },
+    {
+      "name": "key-order-unicode-utf16",
+      "input": { "z": 1, "ä": 2, "😀": 3, "A": 4 },
+      "canonical": "{\"A\":4,\"z\":1,\"ä\":2,\"😀\":3}"
+    },
+    {
+      "name": "string-escapes",
+      "input": { "s": "quote\" backslash\\ slash/ ctrl\u0001 tab\t newline\n" },
+      "canonical": "{\"s\":\"quote\\\" backslash\\\\ slash/ ctrl\\u0001 tab\\t newline\\n\"}"
+    },
+    {
+      "name": "non-ascii-preserved",
+      "input": { "s": "héllo 😀" },
+      "canonical": "{\"s\":\"héllo 😀\"}"
+    },
+    {
+      "name": "safe-integers",
+      "input": { "min": -9007199254740991, "max": 9007199254740991, "zero": 0 },
+      "canonical": "{\"max\":9007199254740991,\"min\":-9007199254740991,\"zero\":0}"
+    },
+    {
+      "name": "nested",
+      "input": { "b": [{ "d": 4, "c": 3 }], "a": true },
+      "canonical": "{\"a\":true,\"b\":[{\"c\":3,\"d\":4}]}"
+    }
+  ]
+}

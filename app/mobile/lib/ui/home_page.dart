@@ -1,18 +1,25 @@
 import 'package:flutter/material.dart';
 
-/// 首页占位。
+import 'features_page.dart';
+import 'identity_page.dart';
+import 'requests_page.dart';
+
+/// 首页。
 ///
-/// Phase 0.1 的职责只有两件：
+/// Phase 0.2 的职责：
 /// 1. 让人一眼看出这是**什么项目**、现在到哪一步；
-/// 2. 明确标出"哪些能力还不存在"，避免把设计文档当成已实现功能。
+/// 2. 明确标出"哪些能力还不存在"，避免把设计文档当成已实现功能；
+/// 3. 提供真实可操作的入口：内存身份、签名需求公告板、功能清单。
 ///
-/// 所有禁用按钮都是有意的：不做假的成功路径。
+/// 仍然禁用或尚不存在的按钮/功能不会被伪装成成功路径。
 class HomePage extends StatelessWidget {
   const HomePage({super.key});
 
   static const createIdentityButtonKey = Key('home.createIdentityButton');
+  static const requestsButtonKey = Key('home.requestsButton');
+  static const featuresButtonKey = Key('home.featuresButton');
 
-  static const phaseLabel = 'Phase 0.1';
+  static const phaseLabel = 'Phase 0.2';
   static const titleText = '信约阁';
 
   @override
@@ -46,7 +53,7 @@ class HomePage extends StatelessWidget {
             const SizedBox(height: 24),
             const Center(
               child: Text(
-                'v0.1.0 · MIT License · 无中心业务服务器',
+                'v0.2.1 · MIT License · 无中心业务服务器',
                 style: TextStyle(fontSize: 12),
               ),
             ),
@@ -57,7 +64,7 @@ class HomePage extends StatelessWidget {
   }
 }
 
-/// 当前阶段与"这是骨架"的说明。
+/// 当前阶段与"哪些能力已实现 / 未实现"的说明。
 class _IntroCard extends StatelessWidget {
   const _IntroCard({required this.textTheme});
 
@@ -82,7 +89,7 @@ class _IntroCard extends StatelessWidget {
                   side: BorderSide.none,
                 ),
                 const SizedBox(width: 8),
-                Text('工程骨架', style: textTheme.titleMedium),
+                Text('协议 · 身份 · 公告板', style: textTheme.titleMedium),
               ],
             ),
             const SizedBox(height: 12),
@@ -99,16 +106,51 @@ class _IntroCard extends StatelessWidget {
                 borderRadius: BorderRadius.circular(8),
               ),
               child: Text(
-                '当前版本只有界面外壳：身份、签名、协议、数据库与 P2P 网络都尚未实现。'
+                '当前版本可以生成内存身份、发布并签名本机需求；'
+                '数据库、P2P 网络与 Offer/Agreement 流程尚未实现。'
                 '它不能用于任何真实交易。',
                 style: textTheme.bodySmall,
               ),
             ),
             const SizedBox(height: 16),
-            const FilledButton(
-              key: HomePage.createIdentityButtonKey,
-              onPressed: null,
-              child: Text('创建身份（Phase 1 起可用）'),
+            Wrap(
+              spacing: 8,
+              runSpacing: 8,
+              children: [
+                FilledButton(
+                  key: HomePage.createIdentityButtonKey,
+                  onPressed: () {
+                    Navigator.of(context).push(
+                      MaterialPageRoute<void>(
+                        builder: (_) => const IdentityPage(),
+                      ),
+                    );
+                  },
+                  child: const Text('身份与签名演示'),
+                ),
+                FilledButton.tonal(
+                  key: HomePage.requestsButtonKey,
+                  onPressed: () {
+                    Navigator.of(context).push(
+                      MaterialPageRoute<void>(
+                        builder: (_) => const RequestsPage(),
+                      ),
+                    );
+                  },
+                  child: const Text('需求公告板'),
+                ),
+                OutlinedButton(
+                  key: HomePage.featuresButtonKey,
+                  onPressed: () {
+                    Navigator.of(context).push(
+                      MaterialPageRoute<void>(
+                        builder: (_) => const FeaturesPage(),
+                      ),
+                    );
+                  },
+                  child: const Text('功能清单'),
+                ),
+              ],
             ),
           ],
         ),
@@ -124,10 +166,14 @@ class _PlannedFeaturesCard extends StatelessWidget {
   final TextTheme textTheme;
 
   static const _items = <({IconData icon, String label, String phase})>[
-    (icon: Icons.key_outlined, label: '创建本地身份与密钥备份', phase: 'Phase 1'),
-    (icon: Icons.campaign_outlined, label: '发布需求公告（Request）', phase: 'Phase 1'),
-    (icon: Icons.handshake_outlined, label: '响应与双方签署协议', phase: 'Phase 1'),
-    (icon: Icons.timeline_outlined, label: '追加式事件与完成确认', phase: 'Phase 1'),
+    (icon: Icons.key_outlined, label: '生成内存身份与信封签名', phase: 'Phase 0.2'),
+    (icon: Icons.campaign_outlined, label: '发布并签名本机需求', phase: 'Phase 0.2b'),
+    (icon: Icons.shield_outlined, label: '身份加密备份', phase: 'Phase 1'),
+    (
+      icon: Icons.handshake_outlined,
+      label: 'Offer / Agreement / 事件 / 评价',
+      phase: 'Phase 1',
+    ),
     (icon: Icons.devices_other_outlined, label: '两台设备直连', phase: 'Phase 2'),
     (icon: Icons.travel_explore_outlined, label: '附近公告发现与缓存', phase: 'Phase 4'),
   ];

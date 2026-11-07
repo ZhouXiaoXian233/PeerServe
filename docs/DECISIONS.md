@@ -109,10 +109,11 @@
 
 ## ADR-011 Phase 0.1 采用单包结构，pub workspace 延后
 
-- **状态**：已采纳
+- **状态**：已采纳；Phase 0.2 已执行迁移（2026-11-07）
 - **背景**：调研建议最终用 Dart pub workspaces 管理 `app/mobile` + `packages/osn_*`。但 Phase 0.1 只有应用本身，若同时建立 workspace 根与多个空包，会产生"看起来实现了"的误导，并增加冒烟测试之外的维护面。
 - **选项**：(a) 立刻建立 workspace 根 + 5 个空包；(b) 只建 `app/mobile`，第一个真实包出现时再引入 workspace。
 - **决定**：(b)。当 Phase 0.2 创建 `packages/osn_protocol` 时，同时引入根 `pubspec.yaml`（workspace）并启用 `resolution: workspace`。
+- **执行结果**：根 `pubspec.yaml` 已建立，成员为 `app/mobile`、`packages/osn_protocol`、`packages/osn_identity`；统一使用根 `pubspec.lock`。未创建存储、传输、trust_view 空包。
 - **理由**：空壳包会让 AI 与人类贡献者误判进度；workspace 的收益（统一解析、单一 lockfile）在第二个包出现时才成立。
 - **代价**：Phase 0.1 的 CI 只覆盖一个目录；将来迁移时需要一次性调整（`pubspec.lock` 位置、IDE 配置）。
 - **复审条件**：Phase 0.2 开始时执行迁移，并在 `CHANGELOG.md` 记录。
@@ -126,3 +127,13 @@
 - **理由**：单一语言覆盖 UI 与协议逻辑；纯 Dart 包可以在 CI 里秒级跑完整业务测试；Flutter 的 Android 工具链成熟。
 - **代价**：Dart 的 P2P 生态（`dart_libp2p`）年轻、单人维护，需要适配器隔离与锁版本。
 - **复审条件**：Phase 2 若 Dart 侧传输方案全部不达标，评估"Rust 核心 + Flutter FFI"（此时 ADR 需重写）。
+
+## ADR-013 信封签名覆盖 sender_id 与 sent_at
+
+- **状态**：已采纳（Phase 0.2，2026-11-07）
+- **背景**：PROTOCOL_SPEC 早期草案把签名范围写成 `payload`，但把 `sender_id`/`sent_at` 留在签名外，会让接收方可以替换发送方身份或声明时间而签名仍"有效"。
+- **选项**：(a) 只签 payload；(b) 签 `{schema_version, type, sender_id, sent_at, payload}`；(c) 把 `signature` 也纳入签名。
+- **决定**：(b)。签名字节 = `UTF-8("PeerServe:v1:" + JCS(signed_payload))`，`signature` 留在信封外层。
+- **理由**：身份与时间是"谁在何时声明了什么"的组成部分；不签它们会让重放/替换攻击只改一个外层字段。签名覆盖签名自身则会产生递归，方案 (c) 不可行。
+- **代价**：`sent_at` 被签名后不能由接收方"校正"；时间偏差只能在业务层容忍，不能改写信封。
+- **复审条件**：若未来需要可转发的"时间戳证明"，应新增独立对象，而不是把 `sent_at` 移出签名范围。

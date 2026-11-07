@@ -1,0 +1,11 @@
+name: peerserve_workspace
+description: PeerServe 纯 Dart 包与 Flutter 应用的 pub workspace 根。
+publish_to: none
+
+environment:
+  sdk: ^3.13.7
+
+workspace:
+  - app/mobile
+  - packages/osn_protocol
+  - packages/osn_identity

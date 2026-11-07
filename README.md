@@ -5,7 +5,7 @@
 
 > 一个开源、无中心业务服务器、以手机为节点的 P2P 需求公告板：直接发布需求、发现需求、联系服务提供者，并记录**参与者自己签名**的协议、事件与评价。
 
-**当前状态：Phase 0.1（工程骨架）——只能跑通 Flutter 应用外壳与测试，尚无身份、协议与网络功能。**
+**当前状态：Phase 0.2b（协议、身份、Request 本机公告板）——可生成内存身份、签名并独立验签信封、发布本机内存需求；仍无数据库、网络与 Offer/Agreement 流程。**
 
 ---
 
@@ -53,25 +53,33 @@ PeerServe 想提供一个**开放工具**而不是一个新平台：
 
 模块之间通过接口通信；UI 不直接写 SQL，也不直接操作套接字。详见 [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)。
 
-## 4. 目录结构（Phase 0.1 现状）
+## 4. 目录结构（Phase 0.2 现状）
 
 ```text
 PeerServe/
-├── app/mobile/            # Flutter 应用（Android 优先）——当前唯一的可运行代码
+├── pubspec.yaml           # pub workspace 根（单一 lockfile）
+├── app/mobile/            # Flutter 应用（Android 优先；web 仅本地预览）
 │   ├── lib/               # main.dart, app.dart, ui/
-│   ├── test/              # widget / smoke 测试
-│   └── android/           # Android 宿主工程
+│   ├── test/              # widget / 导航 / 身份 / 公告板测试
+│   └── web/               # 本地预览用 web 宿主（非发布目标）
+├── packages/
+│   ├── osn_protocol/      # 无浮点 JCS、严格 JSON、信封、Request 模型
+│   └── osn_identity/      # Ed25519、did:key、信封签名/验签
+├── protocol/
+│   ├── schemas/           # envelope.v1.json
+│   └── test-vectors/      # JCS、RFC 8032、固定信封向量
 ├── docs/                  # 设计文档与 ADR（本仓库的"宪法"）
-├── .github/workflows/     # CI：analyze + format + test
+├── tool/                  # 固定向量生成脚本
+├── .github/workflows/     # CI：format + analyze + test
 └── README.md / LICENSE / AGENTS.md / ...
 ```
 
-> `packages/osn_protocol`、`packages/osn_identity` 等纯 Dart 包**尚未创建**。按本仓库的规则，不为"目录看起来完整"而建空壳：每个包在它的第一个垂直切片开始时才创建（见 [docs/DECISIONS.md](docs/DECISIONS.md) ADR-011）。
+> `osn_storage`、`osn_transport`、`osn_trust_view` 仍**未创建**：按 ADR-011，包只在对应垂直切片开始时才创建，不建空壳。
 
 ## 5. 环境要求
 
 - Flutter **stable**（Dart 3.13+），开发文档按 Flutter 3.47.8 记录
-- 目标平台：Android（Phase 0.1 不需要 Android SDK 就能跑 `flutter test`）
+- 目标平台：Android（Phase 0/1 不需要 Android SDK 就能跑 `flutter test`）
 - Windows / macOS / Linux 均可开发
 
 完整安装步骤（含国内镜像、Android SDK、真机调试）见 [docs/ENVIRONMENT_SETUP.md](docs/ENVIRONMENT_SETUP.md)。
@@ -85,34 +93,55 @@ flutter doctor -v
 
 ## 6. 本地构建与测试
 
+工作区根目录：
+
 ```bash
-cd app/mobile
-
-flutter pub get          # 拉取依赖
-flutter analyze          # 静态分析（CI 会跑）
-dart format --output=none --set-exit-if-changed lib test   # 格式检查
-flutter test             # 单元/Widget 测试（CI 会跑）
-
-flutter run              # 连接真机或模拟器运行
-flutter build apk --debug   # 需要 Android SDK
+dart pub get
+dart test packages/osn_protocol
+dart test packages/osn_identity
 ```
 
-> 真机验收（两台设备交换签名消息）属于 Phase 2，需要 Android SDK 与两台真机，见 [docs/ENVIRONMENT_SETUP.md](docs/ENVIRONMENT_SETUP.md)。
+应用：
+
+```bash
+flutter analyze app/mobile
+flutter test app/mobile
+flutter run -d android          # 需要 Android SDK 与设备/模拟器
+flutter run -d chrome           # 仅本地预览；不是发布目标
+flutter build apk --debug       # 需要 Android SDK
+```
+
+> `web/` 只是为了在没有 Android 设备时快速看界面，不属于 MVP 验收平台。真机验收（两台设备交换签名消息）属于 Phase 2，需要 Android SDK 与两台真机。
+
+格式检查：
+
+```bash
+dart format --output=none --set-exit-if-changed app/mobile/lib app/mobile/test packages tool
+```
+
+> 真机验收（两台设备交换签名消息）属于 Phase 2，需要 Android SDK 与两台真机，见 [docs/ENVIRONMENT_SETUP.md](docs/ENVIRONMENT_SETUP.md)。当前的内存身份演示可在 `flutter test` 或应用首页进入。
 
 ## 7. 当前进度
 
 | 阶段 | 内容 | 状态 |
 | --- | --- | --- |
-| Phase 0.1 | Flutter 骨架、目录约定、CI、文档基线 | ✅ 本次 |
-| Phase 0.2 | 协议规范化（JCS）+ Ed25519 签名/验签（含测试向量） | ⬜ 下一步 |
+| Phase 0.1 | Flutter 骨架、目录约定、CI、文档基线 | ✅ |
+| Phase 0.2 | 协议规范化（无浮点 JCS）+ Ed25519 + did:key + 信封（含测试向量） | ✅ 基础完成 |
+| Phase 0.2b | Request v1 模型 + 本机签名公告板 + 应用内功能清单 | ✅ 本切片 |
+| Phase 0.2c | Offer / Agreement / Event / Review 业务模型 | ⬜ 下一步 |
 | Phase 0.3 | SQLite 持久化与重启恢复验证 | ⬜ |
-| Phase 1 | 纯本地业务核心：Request/Offer/Agreement/Event/Review | ⬜ |
+| Phase 1 | 纯本地业务核心：发布→响应→签署→事件→评价 | ⬜ |
 | Phase 2 | 两节点直连（Transport + 配对） | ⬜ |
 | Phase 3+ | 公告板体验、发现与缓存、安全加固 | ⬜ |
 
-已实现：应用外壳（欢迎页 → 首页）、主题、基础测试与 CI 流水线。
+已实现：
 
-未实现：身份、签名、任何协议模型、数据库、网络传输、P2P 发现。**当前版本不能用于任何真实交易。**
+- `osn_protocol`：无浮点 JCS 子集、严格 JSON（重复键/浮点/大小/深度）、信封模型与校验、Request v1 模型（类别/地点/时间窗/价格/nonce）；
+- `osn_identity`：Ed25519 种子派生、签名/验签、`did:key` 编解码、按 `sender_id` 独立验签；
+- 固定向量：RFC 8032 TEST 1–3、JCS 用例、固定信封签名；
+- UI：首页 → “身份与签名演示”、“需求公告板（内存）”、“功能清单”；公告板可发布签名 Request 并立即验签。
+
+未实现：Offer / Agreement / Event / Review、数据库、网络传输、P2P 发现、真实交易流程。**当前版本不能用于任何真实交易。**
 
 ## 8. 安全与隐私限制（务必阅读）
 

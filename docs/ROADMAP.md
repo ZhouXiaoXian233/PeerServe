@@ -13,15 +13,30 @@
 
 **验收**：`flutter analyze` 与 `flutter test` 在干净环境通过。
 
-## Phase 0.2 协议与身份（下一步）
+## Phase 0.2 协议与身份（基础完成）
 
-- [ ] 引入 pub workspace 根 `pubspec.yaml`（ADR-011）
-- [ ] `packages/osn_protocol`：模型、JCS 规范化、字段校验、禁浮点
-- [ ] `packages/osn_identity`：Ed25519 生成/签名/验签、`did:key` 派生
-- [ ] `protocol/test-vectors/`：JCS(RFC 8785)、Ed25519(RFC 8032)、信封、篡改用例
-- [ ] 决定 `sender_id`/`sent_at` 是否纳入签名范围
+- [x] 引入 pub workspace 根 `pubspec.yaml`（ADR-011）
+- [x] `packages/osn_protocol`：无浮点 JCS、严格 JSON、信封、字段校验
+- [x] `packages/osn_identity`：Ed25519 生成/签名/验签、`did:key` 派生
+- [x] `protocol/test-vectors/`：JCS、Ed25519（RFC 8032）、信封、篡改用例
+- [x] `protocol/schemas/envelope.v1.json`
+- [x] 决定 `sender_id`/`sent_at` 纳入签名范围（ADR-013）
+- [ ] Offer / Agreement / Event / Review 的业务字段模型与逐字段校验
+- [ ] 对象关联、去重、过期与时间偏差策略（依赖存储，Phase 0.3 / 1）
 
-**验收**：固定向量签名在 Dart 与（脚本生成的）参考实现下字节一致；篡改任一字段验签失败。
+**已完成部分的验收**：RFC 8032 测试向量通过；固定信封向量的签名字节可复算；篡改 payload / `sent_at` / `sender_id` / 签名后验签失败；浮点、重复键、超长消息被拒绝。
+
+## Phase 0.2b Request 模型与本机公告板 ✅（2026-11-07）
+
+- [x] `Request` v1：类别、地点、时间窗、价格、过期时间、nonce、逐字段校验
+- [x] Request 装入签名信封，并用 `sender_id` 独立验签（测试覆盖）
+- [x] 应用内“需求公告板（内存）”：发布示例需求、显示签名状态与规范化 JSON
+- [x] 应用内“功能清单”页：已完成 / 部分完成 / 计划中
+- [x] web 宿主仅用于本地预览（不是 MVP 发布目标）
+- [ ] Offer / Agreement / Event / Review 模型
+- [ ] SQLite 持久化
+
+**验收**：`Request.fromJson` 拒绝浮点金额、超长字段、倒置时间窗、越界坐标与非法 nonce；签名后的 Request 可独立验签。
 
 ## Phase 0.3 存储
 

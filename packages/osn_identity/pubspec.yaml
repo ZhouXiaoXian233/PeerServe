@@ -1,0 +1,18 @@
+name: osn_identity
+description: PeerServe 身份层：Ed25519 密钥、did:key 与信封签名/验签。
+version: 0.1.0
+publish_to: none
+
+environment:
+  sdk: ^3.13.7
+
+resolution: workspace
+
+dependencies:
+  cryptography: ^2.9.0
+  osn_protocol:
+    path: ../osn_protocol
+
+dev_dependencies:
+  lints: ^6.0.0
+  test: ^1.25.8

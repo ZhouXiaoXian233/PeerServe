@@ -1,0 +1,27 @@
+{
+  "warning": "公开的 RFC 8032 测试种子，只用于向量复算，不是任何真实身份，也不得用于实际用途。",
+  "seed_hex": "9d61b19deffd5a60ba844af492ec2cc44449c5697b326919703bac031cae7f60",
+  "sender_id": "did:key:z6MktwupdmLXVVqTzCw4i46r4uGyosGXRnR3XjN4Zq7oMMsw",
+  "schema_version": 1,
+  "type": "request.created",
+  "sent_at": "2026-11-07T04:30:00.000Z",
+  "payload": {
+    "request_id": "00000000-0000-4000-8000-000000000001",
+    "category": "delivery",
+    "title": "从图书馆带一本书",
+    "price": {
+      "amount_minor": 5000,
+      "currency": "CNY"
+    },
+    "origin": {
+      "label": "图书馆",
+      "lat_e7": 312304000,
+      "lon_e7": 1214737000,
+      "precision_m": 100
+    },
+    "nonce": "AAECAwQFBgcICQoLDA0ODw"
+  },
+  "canonical_signing_payload": "{\"payload\":{\"category\":\"delivery\",\"nonce\":\"AAECAwQFBgcICQoLDA0ODw\",\"origin\":{\"label\":\"图书馆\",\"lat_e7\":312304000,\"lon_e7\":1214737000,\"precision_m\":100},\"price\":{\"amount_minor\":5000,\"currency\":\"CNY\"},\"request_id\":\"00000000-0000-4000-8000-000000000001\",\"title\":\"从图书馆带一本书\"},\"schema_version\":1,\"sender_id\":\"did:key:z6MktwupdmLXVVqTzCw4i46r4uGyosGXRnR3XjN4Zq7oMMsw\",\"sent_at\":\"2026-11-07T04:30:00.000Z\",\"type\":\"request.created\"}",
+  "signed_bytes_utf8": "PeerServe:v1:{\"payload\":{\"category\":\"delivery\",\"nonce\":\"AAECAwQFBgcICQoLDA0ODw\",\"origin\":{\"label\":\"图书馆\",\"lat_e7\":312304000,\"lon_e7\":1214737000,\"precision_m\":100},\"price\":{\"amount_minor\":5000,\"currency\":\"CNY\"},\"request_id\":\"00000000-0000-4000-8000-000000000001\",\"title\":\"从图书馆带一本书\"},\"schema_version\":1,\"sender_id\":\"did:key:z6MktwupdmLXVVqTzCw4i46r4uGyosGXRnR3XjN4Zq7oMMsw\",\"sent_at\":\"2026-11-07T04:30:00.000Z\",\"type\":\"request.created\"}",
+  "signature_base64url": "GTYSYfvFugh0qusnG7blPzWwYkO67lS2ID8QV8-6Qcjqk5TVSdFoLOIr84Pzs9E4f0YW7-yL3UYIr5WDiAf5Cg"
+}

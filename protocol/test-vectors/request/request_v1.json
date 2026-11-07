@@ -1,0 +1,30 @@
+{
+  "warning": "固定测试向量，不是真实需求。",
+  "request": {
+    "schema_version": 1,
+    "request_id": "00000000-0000-4000-8000-000000000001",
+    "creator_id": "did:key:z6MktwupdmLXVVqTzCw4i46r4uGyosGXRnR3XjN4Zq7oMMsw",
+    "category": "delivery",
+    "title": "从图书馆带一本书",
+    "description": "轻装，约 500 克。",
+    "origin": {
+      "label": "图书馆"
+    },
+    "destination": {
+      "label": "东门"
+    },
+    "time_window": {
+      "start": "2026-11-07T05:00:00.000Z",
+      "end": "2026-11-07T06:00:00.000Z"
+    },
+    "price": {
+      "amount_minor": 5000,
+      "currency": "CNY",
+      "payment_method": "external_agreement"
+    },
+    "created_at": "2026-11-07T04:30:00.000Z",
+    "expires_at": "2026-11-07T05:30:00.000Z",
+    "nonce": "AAECAwQFBgcICQoLDA0ODw"
+  },
+  "canonical_json": "{\"category\":\"delivery\",\"created_at\":\"2026-11-07T04:30:00.000Z\",\"creator_id\":\"did:key:z6MktwupdmLXVVqTzCw4i46r4uGyosGXRnR3XjN4Zq7oMMsw\",\"description\":\"轻装，约 500 克。\",\"destination\":{\"label\":\"东门\"},\"expires_at\":\"2026-11-07T05:30:00.000Z\",\"nonce\":\"AAECAwQFBgcICQoLDA0ODw\",\"origin\":{\"label\":\"图书馆\"},\"price\":{\"amount_minor\":5000,\"currency\":\"CNY\",\"payment_method\":\"external_agreement\"},\"request_id\":\"00000000-0000-4000-8000-000000000001\",\"schema_version\":1,\"time_window\":{\"end\":\"2026-11-07T06:00:00.000Z\",\"start\":\"2026-11-07T05:00:00.000Z\"},\"title\":\"从图书馆带一本书\"}"
+}

@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:peerserve/ui/home_page.dart';
+import 'package:peerserve/ui/identity_page.dart';
+import 'package:peerserve/ui/requests_page.dart';
 
 void main() {
   /// 首页整体是一张可滚动的长列表；测试里把视口调高，
@@ -14,18 +16,51 @@ void main() {
     await tester.pumpAndSettle();
   }
 
-  testWidgets('未实现的入口必须保持禁用，不能给出假的成功路径', (tester) async {
+  testWidgets('身份入口可打开真实的内存签名演示', (tester) async {
     await pumpHome(tester);
 
     final button = tester.widget<FilledButton>(
       find.byKey(HomePage.createIdentityButtonKey),
     );
+    expect(button.onPressed, isNotNull);
+    expect(find.text('身份与签名演示'), findsOneWidget);
 
-    expect(button.onPressed, isNull);
-    expect(find.text('创建身份（Phase 1 起可用）'), findsOneWidget);
+    await tester.tap(find.byKey(HomePage.createIdentityButtonKey));
+    await tester.pumpAndSettle();
+
+    expect(find.text('本地身份（内存）'), findsOneWidget);
+    expect(find.byKey(IdentityPage.statusChipKey), findsOneWidget);
   });
 
-  testWidgets('首页必须声明"骨架阶段"的限制说明', (tester) async {
+  testWidgets('需求公告板入口可发布并验签本机需求', (tester) async {
+    await pumpHome(tester);
+
+    await tester.tap(find.byKey(HomePage.requestsButtonKey));
+    await tester.pumpAndSettle();
+
+    expect(find.text('需求公告板（内存）'), findsOneWidget);
+    expect(find.text('签名有效'), findsWidgets);
+
+    await tester.ensureVisible(find.byKey(RequestsPage.publishButtonKey));
+    await tester.tap(find.byKey(RequestsPage.publishButtonKey));
+    await tester.pumpAndSettle();
+
+    expect(find.text('签名有效'), findsWidgets);
+  });
+
+  testWidgets('功能清单列出已完成与计划中', (tester) async {
+    await pumpHome(tester);
+
+    await tester.tap(find.byKey(HomePage.featuresButtonKey));
+    await tester.pumpAndSettle();
+
+    expect(find.text('功能清单'), findsOneWidget);
+    expect(find.textContaining('项已完成'), findsOneWidget);
+    expect(find.text('已完成'), findsOneWidget);
+    expect(find.text('Request v1 数据模型'), findsOneWidget);
+  });
+
+  testWidgets('首页必须声明当前能力的限制说明', (tester) async {
     await pumpHome(tester);
 
     expect(find.textContaining('不能用于任何真实交易'), findsOneWidget);

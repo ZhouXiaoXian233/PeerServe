@@ -1,17 +1,17 @@
 # 测试计划
 
-> 现状：Phase 0.1 只有 widget 冒烟测试。下表是逐步要补齐的完整清单，`状态` 列以代码为准。
+> 现状：Phase 0.2b 已有协议/身份/Request 纯 Dart 测试与 UI 演示测试；下表 `状态` 列以代码为准。
 
 ## 1. 单元测试（纯 Dart，秒级）
 
 | # | 用例 | 阶段 | 状态 |
 | --- | --- | --- | --- |
-| U1 | 身份标识派生稳定（同公钥 → 同 ID） | 0.2 | ⬜ |
-| U2 | 合法签名可验证 | 0.2 | ⬜ |
-| U3 | 篡改任意已签名字段后验签失败 | 0.2 | ⬜ |
-| U4 | JCS 规范化对 RFC 8785 向量一致（含 `-0`、`1e+30`、代理对、键排序） | 0.2 | ⬜ |
-| U5 | 含浮点的 payload 被拒绝 | 0.2 | ⬜ |
-| U6 | 未知 `schema_version` 安全拒绝 | 0.2 | ⬜ |
+| U1 | 身份标识派生稳定（同公钥 → 同 ID） | 0.2 | ✅ |
+| U2 | 合法签名可验证 | 0.2 | ✅ |
+| U3 | 篡改任意已签名字段后验签失败 | 0.2 | ✅（payload / sent_at / sender_id / 签名） |
+| U4 | JCS 规范化对 RFC 8785 向量一致（无浮点子集；`-0`、`1e30`、边界浮点作为拒绝用例） | 0.2 | ✅ |
+| U5 | 含浮点的 payload 被拒绝 | 0.2 | ✅ |
+| U6 | 未知 `schema_version` 安全拒绝 | 0.2 | ✅ |
 | U7 | 过期 Request 不显示为有效新任务 | 1 | ⬜ |
 | U8 | Offer 必须关联存在的 Request | 1 | ⬜ |
 | U9 | Agreement 只有双方签名齐全才是 `mutually_signed` | 1 | ⬜ |
@@ -21,7 +21,9 @@
 | U13 | 重复消息不重复创建事件 | 1 | ⬜ |
 | U14 | 争议陈述不改变对方任何"权限/分数" | 1 | ⬜ |
 | U15 | 状态投影对乱序事件收敛到同一结果 | 1 | ⬜ |
-| U16 | Widget：首页渲染、导航、无身份时的空状态 | 0.1 | ✅ 部分 |
+| U16 | Widget：首页渲染、导航、身份演示页、签名有效/篡改失败 | 0.2 | ✅ |
+| U17 | Request v1 字段校验：浮点金额、超长字段、倒置时间窗、越界坐标、非法 nonce | 0.2b | ✅ |
+| U18 | Request 装入签名信封后可独立验签；公告板 UI 可发布并显示签名状态 | 0.2b | ✅ |
 
 ## 2. 集成测试
 
@@ -46,7 +48,22 @@
 - 日志中不出现私钥（断言日志输出）；
 - 精确坐标不进入广播摘要。
 
-## 4. 人工验收（两台真机）
+## 4. 人工验收（本地 UI 快速检查）
+
+没有 Android 设备时可用 Chrome 预览：
+
+```bash
+flutter run -d chrome
+```
+
+1. 首页点“功能清单”，确认“已完成 / 部分完成 / 计划中”与当前实现一致；
+2. 返回首页点“需求公告板”，应看到一条“签名有效”的示例 Request；
+3. 点“发布示例需求”，列表应新增一条，仍为“签名有效”；
+4. 点“身份与签名演示”，再点“篡改标题并验签”，应显示“篡改后验签失败（符合预期）”。
+
+> web 只用于本地预览；Android 真机与两台设备验收仍按下一节执行。
+
+## 5. 人工验收（两台真机）
 
 1. A 发布"从 X 到 Y"的出行需求；
 2. B 提交响应；
@@ -59,23 +76,32 @@
 9. 第三方设备能区分：协议事实 / 单方声明 / 评价；
 10. 断开网络后，双方仍可查看本地记录。
 
-## 5. 运行方式
+## 6. 运行方式
+
+工作区根目录：
 
 ```bash
-cd app/mobile
-flutter analyze
-dart format --output=none --set-exit-if-changed lib test
-flutter test
-```
-
-Phase 0.2 起增加：
-
-```bash
+dart pub get
 dart test packages/osn_protocol
 dart test packages/osn_identity
 ```
 
-## 6. 报告规则
+应用：
+
+```bash
+flutter analyze app/mobile
+flutter test app/mobile
+```
+
+格式检查：
+
+```bash
+dart format --output=none --set-exit-if-changed app/mobile/lib app/mobile/test packages
+```
+
+> Windows 下若 `dart`/`flutter` 不在 PATH，用 `D:\Tools\flutter\bin\dart.bat` 与 `D:\Tools\flutter\bin\flutter.bat`。
+
+## 7. 报告规则
 
 - CI 与 PR 必须贴**真实命令与真实输出**；
 - 失败就是失败，不得写"应该可以通过"；

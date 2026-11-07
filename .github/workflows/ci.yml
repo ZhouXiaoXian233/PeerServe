@@ -14,12 +14,9 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  flutter:
-    name: analyze + format + test
+  test:
+    name: format + analyze + test
     runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: app/mobile
 
     steps:
       - uses: actions/checkout@v4
@@ -35,14 +32,25 @@ jobs:
       - name: 打印工具链版本
         run: flutter --version
 
-      - name: 拉取依赖
-        run: flutter pub get
+      - name: 拉取 workspace 依赖
+        run: dart pub get
 
       - name: 格式检查
-        run: dart format --output=none --set-exit-if-changed lib test
+        run: >-
+          dart format --output=none --set-exit-if-changed
+          app/mobile/lib app/mobile/test packages tool
 
-      - name: 静态分析
-        run: flutter analyze
+      - name: 纯 Dart 包静态分析
+        run: dart analyze packages/osn_protocol packages/osn_identity
 
-      - name: 测试
-        run: flutter test --reporter expanded
+      - name: Flutter 应用静态分析
+        run: flutter analyze app/mobile
+
+      - name: 协议测试
+        run: dart test packages/osn_protocol --reporter expanded
+
+      - name: 身份测试
+        run: dart test packages/osn_identity --reporter expanded
+
+      - name: Flutter 测试
+        run: flutter test app/mobile --reporter expanded

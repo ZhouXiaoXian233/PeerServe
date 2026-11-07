@@ -1,0 +1,13 @@
+name: osn_protocol
+description: PeerServe 协议层：无浮点 JCS 规范化、信封模型与严格校验。
+version: 0.1.0
+publish_to: none
+
+environment:
+  sdk: ^3.13.7
+
+resolution: workspace
+
+dev_dependencies:
+  lints: ^6.0.0
+  test: ^1.25.8
