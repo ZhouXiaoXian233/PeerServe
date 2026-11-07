@@ -26,7 +26,7 @@
 | adb / platform-tools | ✅ 已装 | 37.0.1 | scoop：`C:\Users\bin\scoop\apps\adb\current\platform-tools` |
 | scrcpy / 7-Zip / ffmpeg | ✅ 已装 | — | scoop |
 | Node.js / pnpm / Python | ✅ 已装 | — | 本项目当前不需要 |
-| **Flutter SDK / Dart** | ✅ **已装（2026-11-07）** | Flutter 3.47.8 · Dart 3.13.7 | `D:\Tools\flutter`（`bin` 未加入 PATH，可用绝对路径调用） |
+| **Flutter SDK / Dart** | ✅ **已装（2026-11-07）** | Flutter 3.47.8 · Dart 3.13.7 | `D:\Tools\flutter`，其 `bin` 已加入**用户 PATH**（新开终端生效） |
 | **Android SDK** | ❌ **缺失** | — | 仅有 adb，无 platforms/build-tools |
 
 > 已实际执行：`flutter --version` → `Flutter 3.47.8 • channel stable`，`Dart 3.13.7`；`flutter analyze` 与 `flutter test` 在 `app/mobile` 下通过。
