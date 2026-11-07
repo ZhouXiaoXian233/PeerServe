@@ -2,11 +2,12 @@ import 'package:flutter/material.dart';
 
 import '../app_session.dart';
 import 'identity_page.dart';
+import 'profile_page.dart';
 import 'requests_page.dart';
 
-/// 首页：只保留主操作与本机身份入口。
+/// 首页：只保留主操作、需求入口与个人中心。
 ///
-/// 技术细节（公钥、规范化 JSON、签名）放在身份页的“开发者详情”里，
+/// 技术细节（公钥、规范化 JSON、签名）放在 debug 构建的“开发者详情”里，
 /// 首页不展示路线图、功能清单或长篇边界说明。
 class HomePage extends StatelessWidget {
   const HomePage({super.key});
@@ -14,6 +15,7 @@ class HomePage extends StatelessWidget {
   static const publishButtonKey = Key('home.publish');
   static const browseButtonKey = Key('home.browse');
   static const identityTileKey = Key('home.identity');
+  static const profileButtonKey = Key('home.profile');
 
   @override
   Widget build(BuildContext context) {
@@ -23,8 +25,31 @@ class HomePage extends StatelessWidget {
     return Scaffold(
       appBar: AppBar(
         title: const Text('信约阁'),
-        actions: const [
-          Padding(
+        actions: [
+          ListenableBuilder(
+            listenable: session,
+            builder: (context, child) {
+              return IconButton(
+                key: profileButtonKey,
+                tooltip: '个人中心',
+                onPressed: () {
+                  Navigator.of(context).push(
+                    MaterialPageRoute<void>(
+                      builder: (_) => const ProfilePage(),
+                    ),
+                  );
+                },
+                icon: CircleAvatar(
+                  radius: 16,
+                  child: Text(
+                    session.profile.avatar,
+                    style: const TextStyle(fontSize: 16),
+                  ),
+                ),
+              );
+            },
+          ),
+          const Padding(
             padding: EdgeInsets.only(right: 16),
             child: Center(
               child: Text(
@@ -43,6 +68,11 @@ class HomePage extends StatelessWidget {
               padding: const EdgeInsets.fromLTRB(20, 12, 20, 32),
               children: [
                 const SizedBox(height: 12),
+                Text(
+                  '你好，${session.profile.nickname}',
+                  style: textTheme.titleMedium,
+                ),
+                const SizedBox(height: 6),
                 Text(
                   '附近的小协作，\n自己约定，自己留证。',
                   style: textTheme.headlineMedium?.copyWith(
@@ -82,8 +112,8 @@ class HomePage extends StatelessWidget {
                   icon: const Icon(Icons.list_alt_outlined),
                   label: Text(
                     session.requests.isEmpty
-                        ? '查看本机需求'
-                        : '查看本机需求（${session.requests.length}）',
+                        ? '查看需求'
+                        : '查看需求（${session.requests.length}）',
                   ),
                 ),
                 const SizedBox(height: 28),

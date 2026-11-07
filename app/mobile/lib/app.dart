@@ -24,7 +24,7 @@ class _PeerServeAppState extends State<PeerServeApp> {
   void initState() {
     super.initState();
     _session = AppSession();
-    unawaited(_session.ensureIdentity());
+    unawaited(_session.bootstrap());
   }
 
   @override

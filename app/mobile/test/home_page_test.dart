@@ -3,6 +3,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:peerserve/app_session.dart';
 import 'package:peerserve/ui/home_page.dart';
 import 'package:peerserve/ui/identity_page.dart';
+import 'package:peerserve/ui/profile_page.dart';
 import 'package:peerserve/ui/requests_page.dart';
 
 Future<AppSession> pumpHome(WidgetTester tester) async {
@@ -83,5 +84,23 @@ void main() {
     expect(find.byKey(RequestsPage.emptyStateKey), findsOneWidget);
     expect(find.text('还没有需求'), findsOneWidget);
     expect(find.text('发布第一条需求'), findsOneWidget);
+  });
+
+  testWidgets('个人中心可修改昵称和头像', (tester) async {
+    final session = await pumpHome(tester);
+
+    await tester.tap(find.byKey(HomePage.profileButtonKey));
+    await tester.pumpAndSettle();
+
+    expect(find.text('个人中心'), findsOneWidget);
+    await tester.enterText(find.byKey(ProfilePage.nicknameFieldKey), '阿信');
+    await tester.tap(find.text('🚲'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(ProfilePage.saveButtonKey));
+    await tester.pumpAndSettle();
+
+    expect(session.profile.nickname, '阿信');
+    expect(session.profile.avatar, '🚲');
+    expect(find.text('你好，阿信'), findsOneWidget);
   });
 }

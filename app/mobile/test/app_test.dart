@@ -9,6 +9,6 @@ void main() {
     expect(find.text('信约阁'), findsOneWidget);
     expect(find.text('PeerServe'), findsOneWidget);
     expect(find.text('发布需求'), findsOneWidget);
-    expect(find.text('查看本机需求'), findsOneWidget);
+    expect(find.textContaining('查看需求'), findsOneWidget);
   });
 }

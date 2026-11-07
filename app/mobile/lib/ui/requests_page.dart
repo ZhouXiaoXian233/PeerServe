@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:osn_protocol/osn_protocol.dart';
 
@@ -102,7 +103,7 @@ class _RequestsPageState extends State<RequestsPage> {
                 Padding(
                   padding: const EdgeInsets.fromLTRB(4, 0, 4, 8),
                   child: Text(
-                    '${session.requests.length} 条 · 只保存在这台设备的内存中',
+                    _listSummary(session.requests),
                     style: textTheme.bodySmall,
                   ),
                 ),
@@ -138,6 +139,29 @@ class _RequestCard extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            Row(
+              children: [
+                CircleAvatar(
+                  radius: 12,
+                  child: Text(
+                    item.authorAvatar,
+                    style: const TextStyle(fontSize: 13),
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Text(item.authorLabel, style: textTheme.labelMedium),
+                if (item.isSample) ...[
+                  const SizedBox(width: 8),
+                  Chip(
+                    label: const Text('示例'),
+                    visualDensity: VisualDensity.compact,
+                    backgroundColor: scheme.tertiaryContainer,
+                    side: BorderSide.none,
+                  ),
+                ],
+              ],
+            ),
+            const SizedBox(height: 8),
             Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -183,38 +207,39 @@ class _RequestCard extends StatelessWidget {
                 ),
               ],
             ),
-            ExpansionTile(
-              tilePadding: EdgeInsets.zero,
-              childrenPadding: const EdgeInsets.only(bottom: 12),
-              title: Text('技术详情', style: textTheme.labelLarge),
-              children: [
-                Align(
-                  alignment: Alignment.centerLeft,
-                  child: SelectableText(
-                    'request_id: ${request.requestId}\n'
-                    'signature: ${item.envelope.signature}',
-                    style: textTheme.bodySmall?.copyWith(
-                      fontFamily: 'monospace',
+            if (kDebugMode)
+              ExpansionTile(
+                tilePadding: EdgeInsets.zero,
+                childrenPadding: const EdgeInsets.only(bottom: 12),
+                title: Text('技术详情', style: textTheme.labelLarge),
+                children: [
+                  Align(
+                    alignment: Alignment.centerLeft,
+                    child: SelectableText(
+                      'request_id: ${request.requestId}\n'
+                      'signature: ${item.envelope.signature}',
+                      style: textTheme.bodySmall?.copyWith(
+                        fontFamily: 'monospace',
+                      ),
                     ),
                   ),
-                ),
-                const SizedBox(height: 8),
-                Container(
-                  width: double.infinity,
-                  padding: const EdgeInsets.all(12),
-                  decoration: BoxDecoration(
-                    color: scheme.surfaceContainerHighest,
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: SelectableText(
-                    canonical,
-                    style: textTheme.bodySmall?.copyWith(
-                      fontFamily: 'monospace',
+                  const SizedBox(height: 8),
+                  Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: scheme.surfaceContainerHighest,
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: SelectableText(
+                      canonical,
+                      style: textTheme.bodySmall?.copyWith(
+                        fontFamily: 'monospace',
+                      ),
                     ),
                   ),
-                ),
-              ],
-            ),
+                ],
+              ),
           ],
         ),
       ),
@@ -235,11 +260,20 @@ class _PublishSheetState extends State<_PublishSheet> {
   final _formKey = GlobalKey<FormState>();
   final _title = TextEditingController();
   final _price = TextEditingController(text: '50');
-  final _origin = TextEditingController();
-  final _destination = TextEditingController();
   final _description = TextEditingController();
+  late final TextEditingController _origin;
+  late final TextEditingController _destination;
   RequestCategory _category = RequestCategory.delivery;
   bool _submitting = false;
+  String? _error;
+
+  @override
+  void initState() {
+    super.initState();
+    final profile = widget.session.profile;
+    _origin = TextEditingController(text: profile.defaultOrigin);
+    _destination = TextEditingController(text: profile.defaultDestination);
+  }
 
   @override
   void dispose() {
@@ -260,7 +294,10 @@ class _PublishSheetState extends State<_PublishSheet> {
       return;
     }
 
-    setState(() => _submitting = true);
+    setState(() {
+      _submitting = true;
+      _error = null;
+    });
     try {
       await widget.session.publish(
         title: _title.text.trim(),
@@ -275,9 +312,12 @@ class _PublishSheetState extends State<_PublishSheet> {
       }
     } on Object catch (error) {
       if (mounted) {
-        setState(() => _submitting = false);
-        ScaffoldMessenger.of(context)
-            .showSnackBar(SnackBar(content: Text('发布失败：$error')));
+        setState(() {
+          _submitting = false;
+          _error = error is ProtocolException
+              ? '发布失败（${error.code.wire}）：${error.message}'
+              : '发布失败：$error';
+        });
       }
     }
   }
@@ -390,6 +430,23 @@ class _PublishSheetState extends State<_PublishSheet> {
                   counterText: '',
                 ),
               ),
+              if (_error != null) ...[
+                const SizedBox(height: 8),
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: Theme.of(context).colorScheme.errorContainer,
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Text(
+                    _error!,
+                    style: TextStyle(
+                      color: Theme.of(context).colorScheme.onErrorContainer,
+                    ),
+                  ),
+                ),
+              ],
               const SizedBox(height: 16),
               SizedBox(
                 width: double.infinity,
@@ -435,6 +492,14 @@ String _categoryLabel(RequestCategory category) => switch (category) {
   RequestCategory.errand => '跑腿',
   RequestCategory.other => '其他',
 };
+
+String _listSummary(List<SignedRequest> items) {
+  final samples = items.where((item) => item.isSample).length;
+  if (samples == 0) {
+    return '${items.length} 条 · 只保存在这台设备的内存中';
+  }
+  return '${items.length} 条 · 含 $samples 条示例数据，仅用于演示';
+}
 
 String _formatAmount(Price price) {
   final major = price.amountMinor ~/ 100;

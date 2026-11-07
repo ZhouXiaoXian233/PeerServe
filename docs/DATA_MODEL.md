@@ -54,6 +54,20 @@
 
 > 用于去重与 TTL 清理；不保存消息内容。
 
+### 2.9 `profiles`（Phase 0.3 计划）
+
+| 列 | 类型 | 说明 |
+| --- | --- | --- |
+| `identity_id` | TEXT PK | 关联本机身份 |
+| `nickname` | TEXT | 可变资料，不是身份 |
+| `avatar` | TEXT | 首版为内置表情标识；后续可为本地图片引用 |
+| `bio` | TEXT | 本机简介，不参与签名 |
+| `default_origin` | TEXT | 发布表单默认起点（模糊地点） |
+| `default_destination` | TEXT | 发布表单默认终点（模糊地点） |
+| `updated_at` | TEXT | 本地更新时间 |
+
+> 个人资料是**本地偏好**，不进入 `did:key`，也不广播；当前只存在内存会话中。
+
 ## 3. 索引
 
 - `requests(expires_at)`、`requests(category)`：列表与过期过滤。

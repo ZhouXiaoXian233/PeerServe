@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:osn_identity/osn_identity.dart';
 import 'package:osn_protocol/osn_protocol.dart';
@@ -171,85 +172,88 @@ class _IdentityPageState extends State<IdentityPage> {
                   label: const Text('重新生成身份'),
                 ),
                 const SizedBox(height: 24),
-                ExpansionTile(
-                  tilePadding: EdgeInsets.zero,
-                  title: const Text('开发者详情'),
-                  subtitle: const Text('公钥、签名与篡改验签测试'),
-                  children: [
-                    Card(
-                      child: Padding(
-                        padding: const EdgeInsets.all(16),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              'Ed25519 公钥（hex）',
-                              style: textTheme.labelMedium,
-                            ),
-                            const SizedBox(height: 4),
-                            SelectableText(
-                              publicKeyHex,
-                              style: textTheme.bodySmall?.copyWith(
-                                fontFamily: 'monospace',
-                              ),
-                            ),
-                            const SizedBox(height: 16),
-                            FilledButton.tonalIcon(
-                              key: IdentityPage.tamperButtonKey,
-                              onPressed: _demoRunning ? null : _runTamperDemo,
-                              icon: const Icon(Icons.science_outlined),
-                              label: const Text('运行篡改验签测试'),
-                            ),
-                            if (_tamperedEnvelope != null) ...[
-                              const SizedBox(height: 12),
-                              Chip(
-                                key: IdentityPage.tamperedStatusKey,
-                                label: Text(
-                                  _tamperedVerified == true
-                                      ? '篡改后仍然通过（异常）'
-                                      : '篡改后验签失败（符合预期）',
-                                ),
-                                visualDensity: VisualDensity.compact,
-                                backgroundColor: _tamperedVerified == true
-                                    ? Theme.of(context)
-                                          .colorScheme
-                                          .errorContainer
-                                    : Theme.of(context)
-                                          .colorScheme
-                                          .secondaryContainer,
-                                side: BorderSide.none,
-                              ),
-                              const SizedBox(height: 8),
+                if (kDebugMode)
+                  ExpansionTile(
+                    tilePadding: EdgeInsets.zero,
+                    title: const Text('开发者详情'),
+                    subtitle: const Text('公钥、签名与篡改验签测试'),
+                    children: [
+                      Card(
+                        child: Padding(
+                          padding: const EdgeInsets.all(16),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
                               Text(
-                                '签名：${_demoEnvelope!.signature}',
+                                'Ed25519 公钥（hex）',
+                                style: textTheme.labelMedium,
+                              ),
+                              const SizedBox(height: 4),
+                              SelectableText(
+                                publicKeyHex,
                                 style: textTheme.bodySmall?.copyWith(
                                   fontFamily: 'monospace',
                                 ),
                               ),
-                              const SizedBox(height: 8),
-                              Container(
-                                width: double.infinity,
-                                padding: const EdgeInsets.all(12),
-                                decoration: BoxDecoration(
-                                  color: Theme.of(context)
-                                      .colorScheme
-                                      .surfaceContainerHighest,
-                                  borderRadius: BorderRadius.circular(8),
+                              const SizedBox(height: 16),
+                              FilledButton.tonalIcon(
+                                key: IdentityPage.tamperButtonKey,
+                                onPressed: _demoRunning ? null : _runTamperDemo,
+                                icon: const Icon(Icons.science_outlined),
+                                label: const Text('运行篡改验签测试'),
+                              ),
+                              if (_tamperedEnvelope != null) ...[
+                                const SizedBox(height: 12),
+                                Chip(
+                                  key: IdentityPage.tamperedStatusKey,
+                                  label: Text(
+                                    _tamperedVerified == true
+                                        ? '篡改后仍然通过（异常）'
+                                        : '篡改后验签失败（符合预期）',
+                                  ),
+                                  visualDensity: VisualDensity.compact,
+                                  backgroundColor: _tamperedVerified == true
+                                      ? Theme.of(context)
+                                            .colorScheme
+                                            .errorContainer
+                                      : Theme.of(context)
+                                            .colorScheme
+                                            .secondaryContainer,
+                                  side: BorderSide.none,
                                 ),
-                                child: SelectableText(
-                                  canonicalize(_demoEnvelope!.signingPayload()),
+                                const SizedBox(height: 8),
+                                Text(
+                                  '签名：${_demoEnvelope!.signature}',
                                   style: textTheme.bodySmall?.copyWith(
                                     fontFamily: 'monospace',
                                   ),
                                 ),
-                              ),
+                                const SizedBox(height: 8),
+                                Container(
+                                  width: double.infinity,
+                                  padding: const EdgeInsets.all(12),
+                                  decoration: BoxDecoration(
+                                    color: Theme.of(context)
+                                        .colorScheme
+                                        .surfaceContainerHighest,
+                                    borderRadius: BorderRadius.circular(8),
+                                  ),
+                                  child: SelectableText(
+                                    canonicalize(
+                                      _demoEnvelope!.signingPayload(),
+                                    ),
+                                    style: textTheme.bodySmall?.copyWith(
+                                      fontFamily: 'monospace',
+                                    ),
+                                  ),
+                                ),
+                              ],
                             ],
-                          ],
+                          ),
                         ),
                       ),
-                    ),
-                  ],
-                ),
+                    ],
+                  ),
               ],
             );
           },

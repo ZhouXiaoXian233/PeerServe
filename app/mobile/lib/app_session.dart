@@ -2,35 +2,85 @@ import 'package:flutter/widgets.dart';
 import 'package:osn_identity/osn_identity.dart';
 import 'package:osn_protocol/osn_protocol.dart';
 
+/// 本机用户资料。只在内存中，不进入身份标识，也不参与签名。
+class UserProfile {
+  const UserProfile({
+    this.nickname = '本机用户',
+    this.avatar = '🙂',
+    this.bio = '',
+    this.defaultOrigin = '',
+    this.defaultDestination = '',
+  });
+
+  final String nickname;
+  final String avatar;
+  final String bio;
+  final String defaultOrigin;
+  final String defaultDestination;
+
+  UserProfile copyWith({
+    String? nickname,
+    String? avatar,
+    String? bio,
+    String? defaultOrigin,
+    String? defaultDestination,
+  }) => UserProfile(
+    nickname: nickname ?? this.nickname,
+    avatar: avatar ?? this.avatar,
+    bio: bio ?? this.bio,
+    defaultOrigin: defaultOrigin ?? this.defaultOrigin,
+    defaultDestination: defaultDestination ?? this.defaultDestination,
+  );
+}
+
 /// 一条已签名并已在本机验签的 Request。
 class SignedRequest {
   const SignedRequest({
     required this.request,
     required this.envelope,
     required this.verified,
+    required this.authorLabel,
+    required this.authorAvatar,
+    this.isSample = false,
   });
 
   final Request request;
   final Envelope envelope;
   final bool verified;
+  final String authorLabel;
+  final String authorAvatar;
+
+  /// 示例数据：用于在没有其他节点时展示列表形态，明确标记，不冒充真实用户。
+  final bool isSample;
 }
 
 /// 应用级内存会话。
 ///
-/// 身份与需求在页面之间共享，但**只在内存中**：重启应用即丢失。
-/// 这样可以先验证交互与协议，而不把持久化问题混进来。
+/// 身份、资料与需求在页面之间共享，但**只在内存中**：重启应用即丢失。
 class AppSession extends ChangeNotifier {
   PeerIdentity? _identity;
   Future<PeerIdentity>? _identityFuture;
   bool _loadingIdentity = false;
   String? _identityError;
+  UserProfile _profile = const UserProfile();
   final List<SignedRequest> _requests = <SignedRequest>[];
+  bool _seeded = false;
+  Future<void>? _bootstrapFuture;
 
   PeerIdentity? get identity => _identity;
   bool get loadingIdentity => _loadingIdentity;
   String? get identityError => _identityError;
+  UserProfile get profile => _profile;
   List<SignedRequest> get requests =>
       List<SignedRequest>.unmodifiable(_requests);
+
+  /// 应用启动：生成身份，并放入几条明确标记的示例需求。
+  Future<void> bootstrap() => _bootstrapFuture ??= _bootstrapInternal();
+
+  Future<void> _bootstrapInternal() async {
+    await ensureIdentity();
+    await _seedSamples();
+  }
 
   /// 确保本机身份已生成；并发调用会复用同一个 Future。
   Future<PeerIdentity> ensureIdentity() {
@@ -59,13 +109,21 @@ class AppSession extends ChangeNotifier {
     }
   }
 
-  /// 重新生成身份，并清空用旧身份发布的本机需求。
+  /// 重新生成身份，清空本机需求并重新放入示例数据。
   Future<void> regenerateIdentity() async {
     _identity = null;
     _identityFuture = null;
     _requests.clear();
+    _seeded = false;
+    _bootstrapFuture = null;
     notifyListeners();
     await ensureIdentity();
+    await _seedSamples();
+  }
+
+  void updateProfile(UserProfile next) {
+    _profile = next;
+    notifyListeners();
   }
 
   /// 发布一条签名 Request。
@@ -80,11 +138,40 @@ class AppSession extends ChangeNotifier {
     String? destinationLabel,
   }) async {
     final identity = await ensureIdentity();
-    final now = DateTime.now().toUtc();
-    final createdAt = formatUtcTimestamp(now);
-    final expiresAt = formatUtcTimestamp(now.add(const Duration(hours: 2)));
-    final start = formatUtcTimestamp(now.add(const Duration(minutes: 30)));
-    final end = formatUtcTimestamp(now.add(const Duration(minutes: 90)));
+    final item = await _createSignedRequest(
+      identity: identity,
+      title: title,
+      category: category,
+      priceMinor: priceMinor,
+      description: description,
+      originLabel: originLabel,
+      destinationLabel: destinationLabel,
+      authorLabel: _profile.nickname,
+      authorAvatar: _profile.avatar,
+    );
+    _requests.insert(0, item);
+    notifyListeners();
+    return item;
+  }
+
+  Future<SignedRequest> _createSignedRequest({
+    required PeerIdentity identity,
+    required String title,
+    required RequestCategory category,
+    required int priceMinor,
+    required String authorLabel,
+    required String authorAvatar,
+    String description = '',
+    String? originLabel,
+    String? destinationLabel,
+    DateTime? now,
+    bool isSample = false,
+  }) async {
+    final base = now ?? DateTime.now().toUtc();
+    final createdAt = formatUtcTimestamp(base);
+    final expiresAt = formatUtcTimestamp(base.add(const Duration(hours: 2)));
+    final start = formatUtcTimestamp(base.add(const Duration(minutes: 30)));
+    final end = formatUtcTimestamp(base.add(const Duration(minutes: 90)));
 
     final request = Request(
       requestId: Request.newId(),
@@ -109,28 +196,98 @@ class AppSession extends ChangeNotifier {
     );
     final verified = await verifyEnvelopeSignature(envelope);
     if (!verified) {
-      throw StateError('新发布的 Request 验签失败，未加入列表');
+      throw StateError('新发布的 Request 验签失败');
     }
-
-    final item = SignedRequest(
+    return SignedRequest(
       request: validated,
       envelope: envelope,
       verified: verified,
+      authorLabel: authorLabel,
+      authorAvatar: authorAvatar,
+      isSample: isSample,
     );
-    _requests.insert(0, item);
-    notifyListeners();
-    return item;
   }
 
-  /// 没有内容时的示例数据，避免首屏完全空白。
-  Future<SignedRequest> publishDemo() => publish(
-    title: '从图书馆带一本书',
-    category: RequestCategory.delivery,
-    priceMinor: 5000,
-    description: '本机示例需求；不会广播。',
-    originLabel: '图书馆',
-    destinationLabel: '东门',
-  );
+  Future<void> _seedSamples() async {
+    if (_seeded) {
+      return;
+    }
+    _seeded = true;
+    final now = DateTime.now().toUtc();
+    final samples =
+        <
+          ({
+            String name,
+            String avatar,
+            String title,
+            String origin,
+            String destination,
+            RequestCategory category,
+            int price,
+            int minutesAgo,
+          })
+        >[
+          (
+            name: '小林',
+            avatar: '🚲',
+            title: '帮忙取一份快递',
+            origin: '菜鸟驿站',
+            destination: '3 号楼',
+            category: RequestCategory.delivery,
+            price: 800,
+            minutesAgo: 6,
+          ),
+          (
+            name: '阿岚',
+            avatar: '🍜',
+            title: '拼单带一份午餐',
+            origin: '南门食堂',
+            destination: '图书馆',
+            category: RequestCategory.food,
+            price: 2500,
+            minutesAgo: 14,
+          ),
+          (
+            name: '老周',
+            avatar: '🧰',
+            title: '借一把螺丝刀，十分钟就还',
+            origin: '工具间',
+            destination: '2 号楼',
+            category: RequestCategory.errand,
+            price: 0,
+            minutesAgo: 22,
+          ),
+          (
+            name: '小夏',
+            avatar: '🚗',
+            title: '顺路去地铁站',
+            origin: '东门',
+            destination: '地铁站',
+            category: RequestCategory.ride,
+            price: 1500,
+            minutesAgo: 31,
+          ),
+        ];
+
+    for (final sample in samples) {
+      final identity = await PeerIdentity.generate();
+      final item = await _createSignedRequest(
+        identity: identity,
+        title: sample.title,
+        category: sample.category,
+        priceMinor: sample.price,
+        description: '示例数据，用于展示需求列表；不是真实用户发布。',
+        originLabel: sample.origin,
+        destinationLabel: sample.destination,
+        authorLabel: sample.name,
+        authorAvatar: sample.avatar,
+        now: now.subtract(Duration(minutes: sample.minutesAgo)),
+        isSample: true,
+      );
+      _requests.add(item);
+    }
+    notifyListeners();
+  }
 
   Place? _place(String? label) {
     final trimmed = label?.trim() ?? '';

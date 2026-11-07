@@ -9,6 +9,27 @@
 - Phase 0.2c：Offer / Agreement / Event / Review 业务对象模型与字段校验
 - Phase 0.3：SQLite 持久化与重启恢复验证
 
+## [0.2.3] - 2026-11-07
+
+### 新增
+
+- 个人中心：昵称、内置头像、简介、常用起终点；资料只保存在本机内存。
+- 首页右上角头像入口 + 问候语；个人资料会影响发布表单的默认起终点。
+- 启动时放入 4 条明确标记“示例”的签名需求，便于在没有其他节点时查看列表形态。
+- 发布表单增加内联错误提示，避免错误 SnackBar 被底部弹层遮住。
+- 开发者详情/技术详情只在 `kDebugMode` 显示，release 构建不出现。
+
+### 变更
+
+- 需求列表显示发布者头像、昵称与“示例”标记。
+- 应用版本提升到 `0.2.3+5`。
+
+### 说明
+
+- 示例身份与示例需求均为运行时生成，仅用于演示，不代表真实用户。
+- 头像首版使用内置表情；图片上传需要本地存储与权限，后续再加。
+- 仍为内存演示：重启后身份、资料、需求都会丢失。
+
 ## [0.2.2] - 2026-11-07
 
 ### 变更
@@ -83,7 +104,8 @@
 - 本版本**不含**身份、签名、数据库、网络与任何业务逻辑；不可用于真实交易。
 - 尚未推送远端、尚未配置 release 流程。
 
-[Unreleased]: https://github.com/ZhouXiaoXian233/PeerServe/compare/v0.2.2...HEAD
+[Unreleased]: https://github.com/ZhouXiaoXian233/PeerServe/compare/v0.2.3...HEAD
+[0.2.3]: https://github.com/ZhouXiaoXian233/PeerServe/compare/v0.2.2...v0.2.3
 [0.2.2]: https://github.com/ZhouXiaoXian233/PeerServe/compare/v0.2.1...v0.2.2
 [0.2.1]: https://github.com/ZhouXiaoXian233/PeerServe/compare/v0.2.0...v0.2.1
 [0.2.0]: https://github.com/ZhouXiaoXian233/PeerServe/compare/v0.1.0...v0.2.0
