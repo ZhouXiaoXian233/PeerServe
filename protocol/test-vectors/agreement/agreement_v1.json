@@ -1,0 +1,20 @@
+{
+  "warning": "固定测试向量，不是真实协议。",
+  "agreement": {
+    "schema_version": 1,
+    "agreement_id": "00000000-0000-4000-8000-000000000003",
+    "request_id": "00000000-0000-4000-8000-000000000001",
+    "offer_id": "00000000-0000-4000-8000-000000000002",
+    "requester_id": "did:key:z6MktwupdmLXVVqTzCw4i46r4uGyosGXRnR3XjN4Zq7oMMsw",
+    "provider_id": "did:key:z6MkhaXgBZDvotDkL5257faiztiGiC2QtKLGpbnnEGta2doK",
+    "service_terms": "从图书馆带一本书到东门。",
+    "agreed_price": 4500,
+    "currency": "CNY",
+    "start_conditions": "响应方到达图书馆后开始。",
+    "completion_conditions": "双方确认书籍交付。",
+    "cancellation_terms": "任一方可提前说明并取消。",
+    "created_at": "2026-11-07T04:40:00.000Z",
+    "expires_at": "2026-11-07T06:00:00.000Z"
+  },
+  "canonical_json": "{\"agreed_price\":4500,\"agreement_id\":\"00000000-0000-4000-8000-000000000003\",\"cancellation_terms\":\"任一方可提前说明并取消。\",\"completion_conditions\":\"双方确认书籍交付。\",\"created_at\":\"2026-11-07T04:40:00.000Z\",\"currency\":\"CNY\",\"expires_at\":\"2026-11-07T06:00:00.000Z\",\"offer_id\":\"00000000-0000-4000-8000-000000000002\",\"provider_id\":\"did:key:z6MkhaXgBZDvotDkL5257faiztiGiC2QtKLGpbnnEGta2doK\",\"request_id\":\"00000000-0000-4000-8000-000000000001\",\"requester_id\":\"did:key:z6MktwupdmLXVVqTzCw4i46r4uGyosGXRnR3XjN4Zq7oMMsw\",\"schema_version\":1,\"service_terms\":\"从图书馆带一本书到东门。\",\"start_conditions\":\"响应方到达图书馆后开始。\"}"
+}

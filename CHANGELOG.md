@@ -9,6 +9,25 @@
 - Phase 0.2c：Offer / Agreement / Event / Review 业务对象模型与字段校验
 - Phase 0.3：SQLite 持久化与重启恢复验证
 
+## [0.2.6] - 2026-11-07
+
+### 新增
+
+- `osn_protocol` 的 `Agreement` v1：条款、价格、开始/完成/取消条件、有效期与逐字段校验。
+- `agreement.v1.json` Schema 与固定 Agreement 向量。
+- 双信封签署规则（ADR-014）：需求方 `agreement.proposed`、响应方 `agreement.signed`，双方对同一 payload 签名。
+- 测试覆盖双方信封均验签通过、payload 的 JCS 一致。
+
+### 变更
+
+- 应用版本提升到 `0.2.6+8`。
+- 协议规范、数据模型、路线图、测试计划与功能清单同步更新。
+
+### 说明
+
+- 本轮只完成 Agreement 协议模型；选择 Offer、生成协议、对方签署的 UI 尚未实现。
+- 仍为内存演示：重启后数据会丢失。
+
 ## [0.2.5] - 2026-11-07
 
 ### 新增
@@ -138,7 +157,8 @@
 - 本版本**不含**身份、签名、数据库、网络与任何业务逻辑；不可用于真实交易。
 - 尚未推送远端、尚未配置 release 流程。
 
-[Unreleased]: https://github.com/ZhouXiaoXian233/PeerServe/compare/v0.2.5...HEAD
+[Unreleased]: https://github.com/ZhouXiaoXian233/PeerServe/compare/v0.2.6...HEAD
+[0.2.6]: https://github.com/ZhouXiaoXian233/PeerServe/compare/v0.2.5...v0.2.6
 [0.2.5]: https://github.com/ZhouXiaoXian233/PeerServe/compare/v0.2.4...v0.2.5
 [0.2.4]: https://github.com/ZhouXiaoXian233/PeerServe/compare/v0.2.3...v0.2.4
 [0.2.3]: https://github.com/ZhouXiaoXian233/PeerServe/compare/v0.2.2...v0.2.3

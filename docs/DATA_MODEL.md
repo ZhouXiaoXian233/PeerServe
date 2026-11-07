@@ -34,7 +34,9 @@
 
 ### 2.4 `agreements`
 
-`agreement_id` PK · `request_id` · `offer_id` · `payload_json` · `requester_signature` · `provider_signature` · `verification_status`（`pending/mutually_signed/conflicting/invalid`）· `created_at`
+`agreement_id` PK · `request_id` · `offer_id` · `payload_json` · `requester_envelope_json` · `provider_envelope_json`（可空） · `verification_status`（`pending/mutually_signed/conflicting/invalid`）· `created_at`
+
+> 双签按 ADR-014 保存为两个独立信封；`payload_json` 必须相同。只有两个信封都存在且验签通过，才是 `mutually_signed`。
 
 ### 2.5 `events`
 

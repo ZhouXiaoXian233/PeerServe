@@ -251,5 +251,51 @@ void main() {
       expect(decoded.providerId, identity.identityId);
       expect(decoded.proposedPrice?.amountMinor, 4500);
     });
+
+    test('Agreement 由双方对同一 payload 各自签名', () async {
+      final provider = await PeerIdentity.fromSeed(
+        hexToBytes(
+          '4ccd089b28ff96da9db6c346ec114e0f5b8a319f35aba624da8cf6ed4fb8a6fb',
+        ),
+      );
+      final agreement = Agreement(
+        agreementId: Agreement.newId(),
+        requestId: '00000000-0000-4000-8000-000000000001',
+        offerId: '00000000-0000-4000-8000-000000000002',
+        requesterId: identity.identityId,
+        providerId: provider.identityId,
+        serviceTerms: '从图书馆带一本书到东门。',
+        agreedPriceMinor: 4500,
+        currency: 'CNY',
+        startConditions: '响应方到达图书馆后开始。',
+        completionConditions: '双方确认书籍交付。',
+        cancellationTerms: '任一方可提前说明并取消。',
+        createdAt: '2026-11-07T04:40:00.000Z',
+        expiresAt: '2026-11-07T06:00:00.000Z',
+      );
+      final validated = Agreement.fromJson(agreement.toJson());
+
+      final requesterEnvelope = await identity.signEnvelope(
+        type: MessageType.agreementProposed,
+        sentAt: '2026-11-07T04:40:00.000Z',
+        payload: validated.toJson(),
+      );
+      final providerEnvelope = await provider.signEnvelope(
+        type: MessageType.agreementSigned,
+        sentAt: '2026-11-07T04:41:00.000Z',
+        payload: validated.toJson(),
+      );
+
+      expect(await verifyEnvelopeSignature(requesterEnvelope), isTrue);
+      expect(await verifyEnvelopeSignature(providerEnvelope), isTrue);
+      expect(
+        canonicalize(requesterEnvelope.payload),
+        canonicalize(providerEnvelope.payload),
+      );
+      expect(
+        Agreement.fromJson(providerEnvelope.payload).agreementId,
+        agreement.agreementId,
+      );
+    });
   });
 }

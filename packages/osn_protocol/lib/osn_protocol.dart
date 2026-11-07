@@ -3,6 +3,7 @@
 /// 纯 Dart，不依赖 Flutter、`dart:io` 或网络。
 library;
 
+export 'src/agreement.dart';
 export 'src/base64url.dart';
 export 'src/canonical_json.dart';
 export 'src/did.dart';

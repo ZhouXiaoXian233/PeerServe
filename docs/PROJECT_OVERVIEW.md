@@ -1,6 +1,6 @@
 # 项目概览
 
-> 状态：Phase 0.2c（协议、身份、Request/Offer 本机流程）· 最后更新 2026-11-07
+> 状态：Phase 0.2d（协议、身份、Request/Offer/Agreement 模型）· 最后更新 2026-11-07
 
 ## 1. 一句话
 
@@ -67,7 +67,7 @@ PeerServe 的假设是：**协作本身不需要一个中介持有数据**。把
 
 ## 7. 当前状态（诚实版）
 
-**已具备**：Flutter 应用外壳、主题、精简首页、个人中心、内存身份页、需求公告板与发布表单、示例需求、需求响应（Offer）、widget 测试、CI；`osn_protocol`（无浮点 JCS、严格 JSON、信封、Request v1、Offer v1）与 `osn_identity`（Ed25519、did:key、验签）；RFC 8032 / JCS / 固定信封/Request/Offer 测试向量。
+**已具备**：Flutter 应用外壳、主题、精简首页、个人中心、内存身份页、需求公告板与发布表单、示例需求、需求响应（Offer）、widget 测试、CI；`osn_protocol`（无浮点 JCS、严格 JSON、信封、Request/Offer/Agreement v1）与 `osn_identity`（Ed25519、did:key、验签）；固定信封/Request/Offer/Agreement 测试向量。
 
 **不具备**：Offer/Agreement/Event/Review 业务对象、数据库、网络传输、发现、完整 UI 业务流程。
 

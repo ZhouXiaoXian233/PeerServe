@@ -49,10 +49,21 @@
 - [x] 需求卡片“响应这条需求”：签名、验签、显示“我的响应”
 - [x] Offer→Request 存在性、不能响应自己的需求、过期需求拒绝
 - [x] `offer.v1.json` Schema 与固定 Offer 向量
-- [ ] Agreement / Event / Review 模型
-- [ ] 需求方选择 Offer 并生成 Agreement
+- [ ] Event / Review 模型
+- [ ] 需求方选择 Offer 并生成 Agreement（UI）
 
 **验收**：Offer 字段非法时拒绝；响应签名可独立验签；本机列表显示响应状态。
+
+## Phase 0.2d Agreement 模型 ✅（2026-11-07）
+
+- [x] `Agreement` v1：条款、价格、条件、有效期、逐字段校验
+- [x] 双签采用两个独立信封（ADR-014），payload 内不嵌签名
+- [x] 双方对同一 payload 各自签名、独立验签的测试
+- [x] `agreement.v1.json` Schema 与固定 Agreement 向量
+- [ ] 需求方选择 Offer 并生成 Agreement（UI）
+- [ ] Event / Review 模型
+
+**验收**：双方信封 payload 的 JCS 相同；两个签名都验证通过；条款非法时拒绝。
 
 ## Phase 0.3 存储
 
