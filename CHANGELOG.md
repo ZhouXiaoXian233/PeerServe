@@ -24,5 +24,5 @@
 - 本版本**不含**身份、签名、数据库、网络与任何业务逻辑；不可用于真实交易。
 - 尚未推送远端、尚未配置 release 流程。
 
-[Unreleased]: https://github.com/YOUR_GITHUB_OWNER/peerserve/compare/v0.1.0...HEAD
-[0.1.0]: https://github.com/YOUR_GITHUB_OWNER/peerserve/releases/tag/v0.1.0
+[Unreleased]: https://github.com/ZhouXiaoXian233/PeerServe/compare/v0.1.0...HEAD
+[0.1.0]: https://github.com/ZhouXiaoXian233/PeerServe/releases/tag/v0.1.0
