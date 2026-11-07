@@ -4,6 +4,7 @@ import 'dart:typed_data';
 import 'base64url.dart';
 import 'did.dart';
 import 'errors.dart';
+import 'ids.dart';
 import 'json_value.dart';
 import 'timestamp.dart';
 
@@ -367,20 +368,7 @@ class Request {
   }
 
   /// 生成一个随机的 UUID v4 风格 request_id。
-  static String newId() {
-    final random = Random.secure();
-    final bytes = List<int>.generate(16, (_) => random.nextInt(256));
-    bytes[6] = (bytes[6] & 0x0F) | 0x40;
-    bytes[8] = (bytes[8] & 0x3F) | 0x80;
-    final hex = bytes
-        .map((byte) => byte.toRadixString(16).padLeft(2, '0'))
-        .join();
-    return '${hex.substring(0, 8)}-'
-        '${hex.substring(8, 12)}-'
-        '${hex.substring(12, 16)}-'
-        '${hex.substring(16, 20)}-'
-        '${hex.substring(20)}';
-  }
+  static String newId() => newUuidV4();
 
   /// 生成 16 字节 nonce（无填充 base64url）。
   static String newNonce() => encodeBase64UrlNoPad(_randomBytes(16));

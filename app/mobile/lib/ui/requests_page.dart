@@ -13,6 +13,11 @@ class RequestsPage extends StatefulWidget {
   static const emptyStateKey = Key('requests.empty');
   static const titleFieldKey = Key('requests.title');
   static const submitButtonKey = Key('requests.submit');
+  static const offerMessageFieldKey = Key('requests.offerMessage');
+  static const offerSubmitButtonKey = Key('requests.offerSubmit');
+
+  static Key offerButtonKey(String requestId) =>
+      Key('requests.offer.$requestId');
 
   final bool openComposer;
 
@@ -45,6 +50,16 @@ class _RequestsPageState extends State<RequestsPage> {
       isScrollControlled: true,
       useSafeArea: true,
       builder: (_) => _PublishSheet(session: session),
+    );
+  }
+
+  Future<void> _openOfferSheet(SignedRequest request) {
+    final session = AppScope.of(context);
+    return showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      useSafeArea: true,
+      builder: (_) => _OfferSheet(session: session, request: request),
     );
   }
 
@@ -146,7 +161,14 @@ class _RequestsPageState extends State<RequestsPage> {
                   for (final item in filtered)
                     Padding(
                       padding: const EdgeInsets.only(bottom: 12),
-                      child: _RequestCard(item: item),
+                      child: _RequestCard(
+                        item: item,
+                        offers: session.offersFor(item.request.requestId),
+                        canRespond:
+                            item.request.creatorId !=
+                            session.identity?.identityId,
+                        onRespond: () => _openOfferSheet(item),
+                      ),
                     ),
               ],
             );
@@ -158,9 +180,17 @@ class _RequestsPageState extends State<RequestsPage> {
 }
 
 class _RequestCard extends StatelessWidget {
-  const _RequestCard({required this.item});
+  const _RequestCard({
+    required this.item,
+    required this.offers,
+    required this.canRespond,
+    required this.onRespond,
+  });
 
   final SignedRequest item;
+  final List<SignedOffer> offers;
+  final bool canRespond;
+  final VoidCallback onRespond;
 
   @override
   Widget build(BuildContext context) {
@@ -243,6 +273,36 @@ class _RequestCard extends StatelessWidget {
                 ),
               ],
             ),
+            if (offers.isNotEmpty) ...[
+              const SizedBox(height: 4),
+              ExpansionTile(
+                tilePadding: EdgeInsets.zero,
+                childrenPadding: const EdgeInsets.only(bottom: 8),
+                title: Text(
+                  '我的响应（${offers.length}）',
+                  style: textTheme.labelLarge,
+                ),
+                children: [
+                  for (final offer in offers)
+                    Padding(
+                      padding: const EdgeInsets.only(bottom: 8),
+                      child: _OfferTile(offer: offer),
+                    ),
+                ],
+              ),
+            ],
+            if (canRespond && offers.isEmpty) ...[
+              const SizedBox(height: 4),
+              SizedBox(
+                width: double.infinity,
+                child: OutlinedButton.icon(
+                  key: RequestsPage.offerButtonKey(request.requestId),
+                  onPressed: onRespond,
+                  icon: const Icon(Icons.handshake_outlined),
+                  label: const Text('响应这条需求'),
+                ),
+              ),
+            ],
             if (kDebugMode)
               ExpansionTile(
                 tilePadding: EdgeInsets.zero,
@@ -277,6 +337,222 @@ class _RequestCard extends StatelessWidget {
                 ],
               ),
           ],
+        ),
+      ),
+    );
+  }
+}
+
+class _OfferTile extends StatelessWidget {
+  const _OfferTile({required this.offer});
+
+  final SignedOffer offer;
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    final textTheme = Theme.of(context).textTheme;
+    final price = offer.offer.proposedPrice;
+
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: scheme.surfaceContainerHighest,
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(
+                offer.verified ? Icons.verified_outlined : Icons.error_outline,
+                size: 16,
+                color: offer.verified ? scheme.primary : scheme.error,
+              ),
+              const SizedBox(width: 6),
+              Text(
+                offer.verified ? '响应已签名并验签' : '响应验签失败',
+                style: textTheme.labelSmall?.copyWith(
+                  color: offer.verified ? scheme.primary : scheme.error,
+                ),
+              ),
+            ],
+          ),
+          if (offer.offer.message.isNotEmpty) ...[
+            const SizedBox(height: 6),
+            Text(offer.offer.message, style: textTheme.bodySmall),
+          ],
+          if (price != null) ...[
+            const SizedBox(height: 4),
+            Text('报价 ${_formatAmount(price)}', style: textTheme.labelMedium),
+          ],
+          const SizedBox(height: 4),
+          Text(
+            '有效至 ${_shortTime(offer.offer.expiresAt)} UTC',
+            style: textTheme.bodySmall,
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _OfferSheet extends StatefulWidget {
+  const _OfferSheet({required this.session, required this.request});
+
+  final AppSession session;
+  final SignedRequest request;
+
+  @override
+  State<_OfferSheet> createState() => _OfferSheetState();
+}
+
+class _OfferSheetState extends State<_OfferSheet> {
+  final _formKey = GlobalKey<FormState>();
+  late final TextEditingController _message;
+  late final TextEditingController _price;
+  bool _submitting = false;
+  String? _error;
+
+  @override
+  void initState() {
+    super.initState();
+    _message = TextEditingController(text: '我可以顺路带过去。');
+    _price = TextEditingController(
+      text: _formatMinorInput(widget.request.request.price.amountMinor),
+    );
+  }
+
+  @override
+  void dispose() {
+    _message.dispose();
+    _price.dispose();
+    super.dispose();
+  }
+
+  Future<void> _submit() async {
+    if (!_formKey.currentState!.validate()) {
+      return;
+    }
+    final priceText = _price.text.trim();
+    final priceMinor = priceText.isEmpty ? null : _parsePrice(priceText);
+    if (priceText.isNotEmpty && priceMinor == null) {
+      return;
+    }
+
+    setState(() {
+      _submitting = true;
+      _error = null;
+    });
+    try {
+      await widget.session.respondToRequest(
+        widget.request,
+        message: _message.text.trim(),
+        priceMinor: priceMinor,
+      );
+      if (mounted) {
+        Navigator.of(context).pop();
+      }
+    } on Object catch (error) {
+      if (mounted) {
+        setState(() {
+          _submitting = false;
+          _error = error is ProtocolException
+              ? '响应失败（${error.code.wire}）：${error.message}'
+              : '响应失败：$error';
+        });
+      }
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final textTheme = Theme.of(context).textTheme;
+
+    return Padding(
+      padding: EdgeInsets.only(
+        left: 20,
+        right: 20,
+        top: 16,
+        bottom: MediaQuery.viewInsetsOf(context).bottom + 20,
+      ),
+      child: SingleChildScrollView(
+        child: Form(
+          key: _formKey,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text('响应需求', style: textTheme.titleLarge),
+              const SizedBox(height: 4),
+              Text(widget.request.request.title, style: textTheme.bodySmall),
+              const SizedBox(height: 16),
+              TextFormField(
+                key: RequestsPage.offerMessageFieldKey,
+                controller: _message,
+                maxLength: 1000,
+                maxLines: 3,
+                decoration: const InputDecoration(
+                  labelText: '给发布者的说明',
+                  counterText: '',
+                ),
+              ),
+              const SizedBox(height: 8),
+              TextFormField(
+                controller: _price,
+                keyboardType: const TextInputType.numberWithOptions(
+                  decimal: true,
+                ),
+                decoration: const InputDecoration(
+                  labelText: '你的报价（CNY，可选）',
+                  helperText: '留空表示按原预算或线下协商',
+                ),
+                validator: (value) {
+                  final text = value?.trim() ?? '';
+                  if (text.isEmpty) {
+                    return null;
+                  }
+                  return _parsePrice(text) == null
+                      ? '请输入合法金额，例如 45 或 45.00'
+                      : null;
+                },
+              ),
+              if (_error != null) ...[
+                const SizedBox(height: 8),
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: Theme.of(context).colorScheme.errorContainer,
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Text(
+                    _error!,
+                    style: TextStyle(
+                      color: Theme.of(context).colorScheme.onErrorContainer,
+                    ),
+                  ),
+                ),
+              ],
+              const SizedBox(height: 16),
+              SizedBox(
+                width: double.infinity,
+                child: FilledButton(
+                  key: RequestsPage.offerSubmitButtonKey,
+                  onPressed: _submitting ? null : _submit,
+                  child: _submitting
+                      ? const SizedBox(
+                          width: 18,
+                          height: 18,
+                          child: CircularProgressIndicator(strokeWidth: 2),
+                        )
+                      : const Text('签名响应'),
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -541,6 +817,12 @@ String _formatAmount(Price price) {
   final major = price.amountMinor ~/ 100;
   final cents = (price.amountMinor % 100).toString().padLeft(2, '0');
   return '${price.currency} $major.$cents';
+}
+
+String _formatMinorInput(int amountMinor) {
+  final major = amountMinor ~/ 100;
+  final cents = (amountMinor % 100).toString().padLeft(2, '0');
+  return '$major.$cents';
 }
 
 String _shortTime(String timestamp) => timestamp.substring(11, 16);

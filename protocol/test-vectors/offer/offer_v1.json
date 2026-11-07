@@ -1,0 +1,22 @@
+{
+  "warning": "固定测试向量，不是真实响应。",
+  "offer": {
+    "schema_version": 1,
+    "offer_id": "00000000-0000-4000-8000-000000000002",
+    "request_id": "00000000-0000-4000-8000-000000000001",
+    "provider_id": "did:key:z6MktwupdmLXVVqTzCw4i46r4uGyosGXRnR3XjN4Zq7oMMsw",
+    "message": "我可以顺路带过去。",
+    "proposed_price": {
+      "amount_minor": 4500,
+      "currency": "CNY",
+      "payment_method": "external_agreement"
+    },
+    "proposed_time": {
+      "start": "2026-11-07T05:10:00.000Z",
+      "end": "2026-11-07T05:40:00.000Z"
+    },
+    "created_at": "2026-11-07T04:35:00.000Z",
+    "expires_at": "2026-11-07T06:00:00.000Z"
+  },
+  "canonical_json": "{\"created_at\":\"2026-11-07T04:35:00.000Z\",\"expires_at\":\"2026-11-07T06:00:00.000Z\",\"message\":\"我可以顺路带过去。\",\"offer_id\":\"00000000-0000-4000-8000-000000000002\",\"proposed_price\":{\"amount_minor\":4500,\"currency\":\"CNY\",\"payment_method\":\"external_agreement\"},\"proposed_time\":{\"end\":\"2026-11-07T05:40:00.000Z\",\"start\":\"2026-11-07T05:10:00.000Z\"},\"provider_id\":\"did:key:z6MktwupdmLXVVqTzCw4i46r4uGyosGXRnR3XjN4Zq7oMMsw\",\"request_id\":\"00000000-0000-4000-8000-000000000001\",\"schema_version\":1}"
+}

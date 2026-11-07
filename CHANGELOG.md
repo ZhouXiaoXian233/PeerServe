@@ -9,6 +9,25 @@
 - Phase 0.2c：Offer / Agreement / Event / Review 业务对象模型与字段校验
 - Phase 0.3：SQLite 持久化与重启恢复验证
 
+## [0.2.5] - 2026-11-07
+
+### 新增
+
+- `osn_protocol` 的 `Offer` v1：`offer_id`、`request_id`、`provider_id`、说明、可选报价/时间、有效期。
+- `offer.v1.json` Schema 与固定 Offer 向量。
+- 需求卡片增加“响应这条需求”：填写说明/报价，签名后立即验签，并显示“我的响应”。
+- 示例需求也可以响应；响应只保存在本机，不会真的送达发布者。
+
+### 变更
+
+- 应用版本提升到 `0.2.5+7`。
+- 协议规范、路线图、测试计划、功能清单与 UI 流程同步更新。
+
+### 说明
+
+- Offer 只表示响应方的声明，不代表需求方接受。
+- 仍为内存演示：重启后响应也会丢失。
+
 ## [0.2.4] - 2026-11-07
 
 ### 变更
@@ -119,7 +138,8 @@
 - 本版本**不含**身份、签名、数据库、网络与任何业务逻辑；不可用于真实交易。
 - 尚未推送远端、尚未配置 release 流程。
 
-[Unreleased]: https://github.com/ZhouXiaoXian233/PeerServe/compare/v0.2.4...HEAD
+[Unreleased]: https://github.com/ZhouXiaoXian233/PeerServe/compare/v0.2.5...HEAD
+[0.2.5]: https://github.com/ZhouXiaoXian233/PeerServe/compare/v0.2.4...v0.2.5
 [0.2.4]: https://github.com/ZhouXiaoXian233/PeerServe/compare/v0.2.3...v0.2.4
 [0.2.3]: https://github.com/ZhouXiaoXian233/PeerServe/compare/v0.2.2...v0.2.3
 [0.2.2]: https://github.com/ZhouXiaoXian233/PeerServe/compare/v0.2.1...v0.2.2

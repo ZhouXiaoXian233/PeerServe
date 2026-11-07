@@ -54,6 +54,19 @@ class SignedRequest {
   final bool isSample;
 }
 
+/// 一条已签名并已在本机验签的 Offer。
+class SignedOffer {
+  const SignedOffer({
+    required this.offer,
+    required this.envelope,
+    required this.verified,
+  });
+
+  final Offer offer;
+  final Envelope envelope;
+  final bool verified;
+}
+
 /// 应用级内存会话。
 ///
 /// 身份、资料与需求在页面之间共享，但**只在内存中**：重启应用即丢失。
@@ -64,6 +77,7 @@ class AppSession extends ChangeNotifier {
   String? _identityError;
   UserProfile _profile = const UserProfile();
   final List<SignedRequest> _requests = <SignedRequest>[];
+  final List<SignedOffer> _offers = <SignedOffer>[];
   bool _seeded = false;
   Future<void>? _bootstrapFuture;
 
@@ -73,6 +87,15 @@ class AppSession extends ChangeNotifier {
   UserProfile get profile => _profile;
   List<SignedRequest> get requests =>
       List<SignedRequest>.unmodifiable(_requests);
+  List<SignedOffer> get offers => List<SignedOffer>.unmodifiable(_offers);
+
+  List<SignedOffer> offersFor(String requestId) =>
+      List<SignedOffer>.unmodifiable(
+        _offers.where((item) => item.offer.requestId == requestId),
+      );
+
+  bool hasResponded(String requestId) =>
+      _offers.any((item) => item.offer.requestId == requestId);
 
   /// 应用启动：生成身份，并放入几条明确标记的示例需求。
   Future<void> bootstrap() => _bootstrapFuture ??= _bootstrapInternal();
@@ -114,6 +137,7 @@ class AppSession extends ChangeNotifier {
     _identity = null;
     _identityFuture = null;
     _requests.clear();
+    _offers.clear();
     _seeded = false;
     _bootstrapFuture = null;
     notifyListeners();
@@ -152,6 +176,68 @@ class AppSession extends ChangeNotifier {
     _requests.insert(0, item);
     notifyListeners();
     return item;
+  }
+
+  /// 响应一条本机可见的 Request，签名并立即验签。
+  ///
+  /// 示例数据也可以响应，但只会保存在本机，不会真的送达发布者。
+  Future<SignedOffer> respondToRequest(
+    SignedRequest request, {
+    String message = '',
+    int? priceMinor,
+  }) async {
+    final identity = await ensureIdentity();
+    if (request.request.creatorId == identity.identityId) {
+      throw StateError('不能响应自己发布的需求');
+    }
+    if (!_requests.any(
+      (item) => item.request.requestId == request.request.requestId,
+    )) {
+      throw StateError('需求不在本机列表中');
+    }
+
+    final now = DateTime.now().toUtc();
+    final requestExpires = DateTime.parse(request.request.expiresAt);
+    if (!requestExpires.isAfter(now)) {
+      throw StateError('需求已过期');
+    }
+    final createdAt = formatUtcTimestamp(now);
+    final twoHoursLater = now.add(const Duration(hours: 2));
+    final expiresAt = formatUtcTimestamp(
+      twoHoursLater.isBefore(requestExpires) ? twoHoursLater : requestExpires,
+    );
+
+    final offer = Offer(
+      offerId: Offer.newId(),
+      requestId: request.request.requestId,
+      providerId: identity.identityId,
+      message: message,
+      proposedPrice: priceMinor == null
+          ? null
+          : Price(amountMinor: priceMinor, currency: 'CNY'),
+      proposedTime: request.request.timeWindow,
+      createdAt: createdAt,
+      expiresAt: expiresAt,
+    );
+    final validated = Offer.fromJson(offer.toJson());
+    final envelope = await identity.signEnvelope(
+      type: MessageType.offerCreated,
+      sentAt: createdAt,
+      payload: validated.toJson(),
+    );
+    final verified = await verifyEnvelopeSignature(envelope);
+    if (!verified) {
+      throw StateError('新 Offer 验签失败');
+    }
+
+    final signed = SignedOffer(
+      offer: validated,
+      envelope: envelope,
+      verified: verified,
+    );
+    _offers.add(signed);
+    notifyListeners();
+    return signed;
   }
 
   Future<SignedRequest> _createSignedRequest({

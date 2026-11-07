@@ -78,4 +78,43 @@ void main() {
     expect(find.text('拼单带一份午餐'), findsOneWidget);
     expect(find.text('帮忙取一份快递'), findsNothing);
   });
+
+  testWidgets('可对本机可见需求签名响应', (tester) async {
+    tester.view.physicalSize = const Size(1080, 2400);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.reset);
+
+    final session = AppSession();
+    addTearDown(session.dispose);
+    await session.bootstrap();
+
+    await tester.pumpWidget(
+      AppScope(
+        session: session,
+        child: const MaterialApp(home: RequestsPage()),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    final target = session.requests.first;
+    final button = find.byKey(
+      RequestsPage.offerButtonKey(target.request.requestId),
+    );
+    await tester.ensureVisible(button);
+    await tester.tap(button);
+    await tester.pumpAndSettle();
+
+    expect(find.byKey(RequestsPage.offerMessageFieldKey), findsOneWidget);
+    await tester.enterText(
+      find.byKey(RequestsPage.offerMessageFieldKey),
+      '我十分钟后到。',
+    );
+    await tester.tap(find.byKey(RequestsPage.offerSubmitButtonKey));
+    await tester.pumpAndSettle();
+
+    expect(session.offers.length, 1);
+    expect(session.offers.single.offer.message, '我十分钟后到。');
+    expect(session.offers.single.verified, isTrue);
+    expect(find.text('我的响应（1）'), findsOneWidget);
+  });
 }

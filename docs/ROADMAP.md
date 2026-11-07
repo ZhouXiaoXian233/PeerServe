@@ -21,7 +21,7 @@
 - [x] `protocol/test-vectors/`：JCS、Ed25519（RFC 8032）、信封、篡改用例
 - [x] `protocol/schemas/envelope.v1.json`
 - [x] 决定 `sender_id`/`sent_at` 纳入签名范围（ADR-013）
-- [ ] Offer / Agreement / Event / Review 的业务字段模型与逐字段校验
+- [ ] Agreement / Event / Review 的业务字段模型与逐字段校验
 - [ ] 对象关联、去重、过期与时间偏差策略（依赖存储，Phase 0.3 / 1）
 
 **已完成部分的验收**：RFC 8032 测试向量通过；固定信封向量的签名字节可复算；篡改 payload / `sent_at` / `sender_id` / 签名后验签失败；浮点、重复键、超长消息被拒绝。
@@ -41,6 +41,18 @@
 - [ ] SQLite 持久化
 
 **验收**：`Request.fromJson` 拒绝浮点金额、超长字段、倒置时间窗、越界坐标与非法 nonce；签名后的 Request 可独立验签。
+
+## Phase 0.2c Offer 模型与本机响应 ✅（2026-11-07）
+
+- [x] `Offer` v1：响应说明、可选报价/时间、有效期、逐字段校验
+- [x] Offer 装入签名信封并可独立验签
+- [x] 需求卡片“响应这条需求”：签名、验签、显示“我的响应”
+- [x] Offer→Request 存在性、不能响应自己的需求、过期需求拒绝
+- [x] `offer.v1.json` Schema 与固定 Offer 向量
+- [ ] Agreement / Event / Review 模型
+- [ ] 需求方选择 Offer 并生成 Agreement
+
+**验收**：Offer 字段非法时拒绝；响应签名可独立验签；本机列表显示响应状态。
 
 ## Phase 0.3 存储
 

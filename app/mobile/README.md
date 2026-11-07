@@ -1,6 +1,6 @@
 # app/mobile — PeerServe 客户端
 
-Flutter 应用（Android 优先；web 仅本地预览）。Phase 0.2b 已有首页、个人中心、内存身份、需求公告板与发布表单（含明确标记的示例需求）；仍不含 Offer/Agreement、存储与网络。功能清单见仓库 [`../../docs/FEATURES.md`](../../docs/FEATURES.md)，不在应用内展示。
+Flutter 应用（Android 优先；web 仅本地预览）。Phase 0.2c 已有首页、个人中心、内存身份、需求公告板与发布表单（含明确标记的示例需求）、对需求签名响应（Offer）；仍不含 Agreement/Event/Review、存储与网络。功能清单见仓库 [`../../docs/FEATURES.md`](../../docs/FEATURES.md)，不在应用内展示。
 
 ## 运行
 

@@ -1,6 +1,6 @@
 # 协议规范（Phase 0.2b）
 
-> 状态：**信封、JCS 子集、Ed25519 与 Request v1 已实现**；Offer / Agreement / Event / Review 的业务对象模型尚未实现。
+> 状态：**信封、JCS 子集、Ed25519、Request v1 与 Offer v1 已实现**；Agreement / Event / Review 的业务对象模型尚未实现。
 > 版本：`schema_version = 1`（未发布）
 
 ## 1. 设计目标
@@ -123,7 +123,12 @@ payload 中允许的类型：`string` / `bool` / `null` / `integer` / `array` / 
 
 ### 7.2 Offer
 
-`offer_id`、`request_id`、`provider_id`、`message`(≤1000)、`proposed_price`(可选)、`proposed_time`(可选)、`created_at`、`expires_at`。
+> Phase 0.2c 已实现：`packages/osn_protocol/lib/src/offer.dart`。
+
+`offer_id`、`request_id`、`provider_id`、`message`(≤1000)、`proposed_price`(可选)、`proposed_time`(可选，`{start,end}`)、`created_at`、`expires_at`。
+
+- Offer 只表示响应方的声明，不代表需求方已接受。
+- `proposed_price` 与 Request 的 `price` 结构一致；`proposed_time` 与 `time_window` 结构一致。
 
 ### 7.3 Agreement
 
@@ -160,7 +165,7 @@ payload 中允许的类型：`string` / `bool` / `null` / `integer` / `array` / 
 8. 去重（`message_id` / `event_id`）；
 9. 通过后才写入"可信视图"；否则仅保留最小诊断记录。
 
-Phase 0.2 的 `osn_protocol` 已实现第 1–4 步（信封层与 Request 字段校验）与第 5 步所需的签名字节生成；`osn_identity` 实现第 5 步的验签。第 6–8 步依赖 Offer/Agreement 与存储，属于 Phase 0.2c / Phase 1 / Phase 0.3。
+Phase 0.2 的 `osn_protocol` 已实现第 1–4 步（信封层、Request 与 Offer 字段校验）与第 5 步所需的签名字节生成；`osn_identity` 实现第 5 步的验签。第 6–8 步中的 Offer→Request 存在性已在本机会话层实现，Agreement/Review 关联、去重与存储属于 Phase 0.2c / Phase 1 / Phase 0.3。
 
 ## 9. 版本演进
 
@@ -178,6 +183,7 @@ Phase 0.2 的 `osn_protocol` 已实现第 1–4 步（信封层与 Request 字�
 - `ed25519/rfc8032.json`：RFC 8032 §7.1 的 TEST 1–3（种子、公钥、消息、签名）；
 - `envelope/request_created.json`：固定种子 + 固定 payload + 固定 `sent_at` → 固定 did:key、规范化 JSON、签名字节与签名；
 - `request/request_v1.json`：固定 Request v1 → 固定规范化 JSON；
+- `offer/offer_v1.json`：固定 Offer v1 → 固定规范化 JSON；
 - 测试内的篡改用例：逐项修改 payload / `sent_at` / `sender_id` / 签名字节 → 验签必须失败。
 
 浮点输入（`-0.0`、`1e30`、`333333333.33333329`）与孤立代理项作为**拒绝用例**放在单元测试中，因为协议层禁止这些值。
@@ -188,12 +194,14 @@ Phase 0.2 的 `osn_protocol` 已实现第 1–4 步（信封层与 Request 字�
 
 - `packages/osn_protocol`：无浮点 JCS 子集、严格 JSON 解析、信封模型与校验、签名字节生成；
 - `packages/osn_protocol` 的 `Request` v1：类别、地点、时间窗、价格、过期时间、nonce 的逐字段校验；
+- `packages/osn_protocol` 的 `Offer` v1：响应说明、可选报价/时间、有效期与逐字段校验；
 - `packages/osn_identity`：Ed25519 种子派生、签名/验签、did:key 编解码、信封独立验签；
 - `protocol/schemas/envelope.v1.json`：信封 JSON Schema（浮点禁令由实现层补充）；
-- `protocol/schemas/request.v1.json`：Request v1 JSON Schema（依赖关系与 nonce 长度由实现层补充）。
+- `protocol/schemas/request.v1.json`：Request v1 JSON Schema（依赖关系与 nonce 长度由实现层补充）；
+- `protocol/schemas/offer.v1.json`：Offer v1 JSON Schema（浮点禁令由实现层补充）。
 
 尚未实现：
 
-- Offer / Agreement / Event / Review 的业务字段模型与逐字段校验；
-- 对象关联、去重、过期与时间偏差策略；
+- Agreement / Event / Review 的业务字段模型与逐字段校验；
+- 对象关联的完整规则、去重、过期与时间偏差策略；
 - 存储、网络与完整业务 UI 流程。

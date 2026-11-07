@@ -227,5 +227,29 @@ void main() {
       expect(decoded.creatorId, identity.identityId);
       expect(decoded.price.amountMinor, 5000);
     });
+
+    test('Offer 可装入签名信封并验签', () async {
+      final offer = Offer(
+        offerId: Offer.newId(),
+        requestId: '00000000-0000-4000-8000-000000000001',
+        providerId: identity.identityId,
+        message: '我可以顺路带过去。',
+        proposedPrice: const Price(amountMinor: 4500, currency: 'CNY'),
+        createdAt: '2026-11-07T04:35:00.000Z',
+        expiresAt: '2026-11-07T06:00:00.000Z',
+      );
+      final validated = Offer.fromJson(offer.toJson());
+      final envelope = await identity.signEnvelope(
+        type: MessageType.offerCreated,
+        sentAt: '2026-11-07T04:35:00.000Z',
+        payload: validated.toJson(),
+      );
+
+      expect(await verifyEnvelopeSignature(envelope), isTrue);
+      final decoded = Offer.fromJson(envelope.payload);
+      expect(decoded.requestId, '00000000-0000-4000-8000-000000000001');
+      expect(decoded.providerId, identity.identityId);
+      expect(decoded.proposedPrice?.amountMinor, 4500);
+    });
   });
 }
