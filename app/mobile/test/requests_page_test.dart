@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:peerserve/app_session.dart';
+import 'package:peerserve/ui/agreement_page.dart';
 import 'package:peerserve/ui/requests_page.dart';
+import 'package:osn_protocol/osn_protocol.dart';
 
 void main() {
   testWidgets('启动后显示明确标记的示例需求', (tester) async {
@@ -116,5 +118,55 @@ void main() {
     expect(session.offers.single.offer.message, '我十分钟后到。');
     expect(session.offers.single.verified, isTrue);
     expect(find.text('我的响应（1）'), findsOneWidget);
+  });
+
+  testWidgets('接受模拟响应、生成协议并模拟对方签署', (tester) async {
+    tester.view.physicalSize = const Size(1080, 3000);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.reset);
+
+    final session = AppSession();
+    addTearDown(session.dispose);
+    await session.ensureIdentity();
+    final own = await session.publish(
+      title: '我的演示需求',
+      category: RequestCategory.delivery,
+      priceMinor: 5000,
+      originLabel: '图书馆',
+      destinationLabel: '东门',
+    );
+
+    await tester.pumpWidget(
+      AppScope(
+        session: session,
+        child: const MaterialApp(home: RequestsPage()),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    final simulate = find.byKey(
+      RequestsPage.simulateOfferButtonKey(own.request.requestId),
+    );
+    await tester.ensureVisible(simulate);
+    await tester.tap(simulate);
+    await tester.pumpAndSettle();
+
+    expect(session.offers.single.isSample, isTrue);
+    final offer = session.offers.single;
+    final accept = find.byKey(
+      RequestsPage.acceptOfferButtonKey(offer.offer.offerId),
+    );
+    await tester.ensureVisible(accept);
+    await tester.tap(accept);
+    await tester.pumpAndSettle();
+
+    expect(find.text('等待对方签署'), findsOneWidget);
+    expect(session.agreements.single.mutuallySigned, isFalse);
+
+    await tester.tap(find.byKey(AgreementPage.providerSignButtonKey));
+    await tester.pumpAndSettle();
+
+    expect(find.text('双方已签署'), findsOneWidget);
+    expect(session.agreements.single.mutuallySigned, isTrue);
   });
 }

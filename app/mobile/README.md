@@ -1,6 +1,6 @@
 # app/mobile — PeerServe 客户端
 
-Flutter 应用（Android 优先；web 仅本地预览）。Phase 0.2c 已有首页、个人中心、内存身份、需求公告板与发布表单（含明确标记的示例需求）、对需求签名响应（Offer）；仍不含 Agreement/Event/Review、存储与网络。功能清单见仓库 [`../../docs/FEATURES.md`](../../docs/FEATURES.md)，不在应用内展示。
+Flutter 应用（Android 优先；web 仅本地预览）。Phase 0.2d 已有首页、个人中心、内存身份、需求公告板与发布表单、签名响应（Offer）、本机协议流程（接受响应 → 待签 → 模拟双方签署）；仍不含 Event/Review、存储与网络。功能清单见仓库 [`../../docs/FEATURES.md`](../../docs/FEATURES.md)，不在应用内展示。
 
 ## 运行
 
@@ -32,7 +32,8 @@ lib/
     ├── home_page.dart    # 首页（发布 / 查看 / 身份 / 个人中心）
     ├── profile_page.dart # 昵称、内置头像、简介、常用起终点
     ├── identity_page.dart# 身份状态 + debug 构建的开发者详情
-    └── requests_page.dart# 需求列表 + 发布表单
+    ├── requests_page.dart# 需求列表 + 发布/响应表单 + 协议入口
+    └── agreement_page.dart# 协议条款、双方签署状态、模拟对方签署
 test/
 ├── app_test.dart            # 应用启动冒烟
 ├── home_page_test.dart      # 首页、发布、身份、个人中心

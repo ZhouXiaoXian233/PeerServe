@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:osn_protocol/osn_protocol.dart';
 
 import '../app_session.dart';
+import 'agreement_page.dart';
 
 /// 本机需求列表。数据来自 [AppSession]，只在内存中。
 class RequestsPage extends StatefulWidget {
@@ -18,6 +19,12 @@ class RequestsPage extends StatefulWidget {
 
   static Key offerButtonKey(String requestId) =>
       Key('requests.offer.$requestId');
+  static Key simulateOfferButtonKey(String requestId) =>
+      Key('requests.simulateOffer.$requestId');
+  static Key acceptOfferButtonKey(String offerId) =>
+      Key('requests.acceptOffer.$offerId');
+  static Key viewAgreementButtonKey(String agreementId) =>
+      Key('requests.viewAgreement.$agreementId');
 
   final bool openComposer;
 
@@ -60,6 +67,44 @@ class _RequestsPageState extends State<RequestsPage> {
       isScrollControlled: true,
       useSafeArea: true,
       builder: (_) => _OfferSheet(session: session, request: request),
+    );
+  }
+
+  Future<void> _simulateOffer(SignedRequest request) async {
+    try {
+      await AppScope.of(context).simulateOfferForOwnRequest(request);
+    } on Object catch (error) {
+      if (mounted) {
+        ScaffoldMessenger.of(context)
+            .showSnackBar(SnackBar(content: Text('模拟响应失败：$error')));
+      }
+    }
+  }
+
+  Future<void> _acceptOffer(SignedRequest request, SignedOffer offer) async {
+    try {
+      final agreement = await AppScope.of(context).acceptOffer(request, offer);
+      if (mounted) {
+        await Navigator.of(context).push(
+          MaterialPageRoute<void>(
+            builder: (_) =>
+                AgreementPage(agreementId: agreement.agreement.agreementId),
+          ),
+        );
+      }
+    } on Object catch (error) {
+      if (mounted) {
+        ScaffoldMessenger.of(context)
+            .showSnackBar(SnackBar(content: Text('生成协议失败：$error')));
+      }
+    }
+  }
+
+  void _viewAgreement(String agreementId) {
+    Navigator.of(context).push(
+      MaterialPageRoute<void>(
+        builder: (_) => AgreementPage(agreementId: agreementId),
+      ),
     );
   }
 
@@ -164,10 +209,19 @@ class _RequestsPageState extends State<RequestsPage> {
                       child: _RequestCard(
                         item: item,
                         offers: session.offersFor(item.request.requestId),
+                        agreements: session.agreementsFor(
+                          item.request.requestId,
+                        ),
+                        isOwn:
+                            item.request.creatorId ==
+                            session.identity?.identityId,
                         canRespond:
                             item.request.creatorId !=
                             session.identity?.identityId,
                         onRespond: () => _openOfferSheet(item),
+                        onSimulateOffer: () => _simulateOffer(item),
+                        onAcceptOffer: (offer) => _acceptOffer(item, offer),
+                        onViewAgreement: _viewAgreement,
                       ),
                     ),
               ],
@@ -183,14 +237,33 @@ class _RequestCard extends StatelessWidget {
   const _RequestCard({
     required this.item,
     required this.offers,
+    required this.agreements,
+    required this.isOwn,
     required this.canRespond,
     required this.onRespond,
+    required this.onSimulateOffer,
+    required this.onAcceptOffer,
+    required this.onViewAgreement,
   });
 
   final SignedRequest item;
   final List<SignedOffer> offers;
+  final List<SignedAgreement> agreements;
+  final bool isOwn;
   final bool canRespond;
   final VoidCallback onRespond;
+  final VoidCallback onSimulateOffer;
+  final ValueChanged<SignedOffer> onAcceptOffer;
+  final ValueChanged<String> onViewAgreement;
+
+  SignedAgreement? _agreementFor(String offerId) {
+    for (final agreement in agreements) {
+      if (agreement.agreement.offerId == offerId) {
+        return agreement;
+      }
+    }
+    return null;
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -278,17 +351,36 @@ class _RequestCard extends StatelessWidget {
               ExpansionTile(
                 tilePadding: EdgeInsets.zero,
                 childrenPadding: const EdgeInsets.only(bottom: 8),
+                initiallyExpanded: isOwn,
                 title: Text(
-                  '我的响应（${offers.length}）',
+                  isOwn ? '收到的响应（${offers.length}）' : '我的响应（${offers.length}）',
                   style: textTheme.labelLarge,
                 ),
                 children: [
                   for (final offer in offers)
                     Padding(
                       padding: const EdgeInsets.only(bottom: 8),
-                      child: _OfferTile(offer: offer),
+                      child: _OfferTile(
+                        offer: offer,
+                        onAccept:
+                            isOwn && _agreementFor(offer.offer.offerId) == null
+                            ? () => onAcceptOffer(offer)
+                            : null,
+                      ),
                     ),
                 ],
+              ),
+            ],
+            if (isOwn && offers.isEmpty) ...[
+              const SizedBox(height: 4),
+              SizedBox(
+                width: double.infinity,
+                child: OutlinedButton.icon(
+                  key: RequestsPage.simulateOfferButtonKey(request.requestId),
+                  onPressed: onSimulateOffer,
+                  icon: const Icon(Icons.science_outlined),
+                  label: const Text('模拟一条响应（演示）'),
+                ),
               ),
             ],
             if (canRespond && offers.isEmpty) ...[
@@ -302,6 +394,39 @@ class _RequestCard extends StatelessWidget {
                   label: const Text('响应这条需求'),
                 ),
               ),
+            ],
+            if (agreements.isNotEmpty) ...[
+              const SizedBox(height: 4),
+              for (final agreement in agreements)
+                ListTile(
+                  contentPadding: EdgeInsets.zero,
+                  leading: Icon(
+                    agreement.mutuallySigned
+                        ? Icons.verified_outlined
+                        : Icons.pending_outlined,
+                    color: agreement.mutuallySigned
+                        ? scheme.primary
+                        : scheme.outline,
+                  ),
+                  title: Text(
+                    agreement.mutuallySigned ? '协议 · 双方已签署' : '协议 · 等待对方签署',
+                    style: textTheme.labelLarge,
+                  ),
+                  subtitle: Text(
+                    _formatAmountValue(
+                      agreement.agreement.agreedPriceMinor,
+                      agreement.agreement.currency,
+                    ),
+                  ),
+                  trailing: TextButton(
+                    key: RequestsPage.viewAgreementButtonKey(
+                      agreement.agreement.agreementId,
+                    ),
+                    onPressed: () =>
+                        onViewAgreement(agreement.agreement.agreementId),
+                    child: const Text('查看'),
+                  ),
+                ),
             ],
             if (kDebugMode)
               ExpansionTile(
@@ -344,9 +469,10 @@ class _RequestCard extends StatelessWidget {
 }
 
 class _OfferTile extends StatelessWidget {
-  const _OfferTile({required this.offer});
+  const _OfferTile({required this.offer, this.onAccept});
 
   final SignedOffer offer;
+  final VoidCallback? onAccept;
 
   @override
   Widget build(BuildContext context) {
@@ -378,6 +504,15 @@ class _OfferTile extends StatelessWidget {
                   color: offer.verified ? scheme.primary : scheme.error,
                 ),
               ),
+              if (offer.isSample) ...[
+                const Spacer(),
+                Text(
+                  '示例响应',
+                  style: textTheme.labelSmall?.copyWith(
+                    color: scheme.onSurfaceVariant,
+                  ),
+                ),
+              ],
             ],
           ),
           if (offer.offer.message.isNotEmpty) ...[
@@ -393,6 +528,17 @@ class _OfferTile extends StatelessWidget {
             '有效至 ${_shortTime(offer.offer.expiresAt)} UTC',
             style: textTheme.bodySmall,
           ),
+          if (onAccept != null) ...[
+            const SizedBox(height: 8),
+            SizedBox(
+              width: double.infinity,
+              child: FilledButton.tonal(
+                key: RequestsPage.acceptOfferButtonKey(offer.offer.offerId),
+                onPressed: onAccept,
+                child: const Text('接受并生成协议'),
+              ),
+            ),
+          ],
         ],
       ),
     );
@@ -813,10 +959,13 @@ String _listSummary(List<SignedRequest> items) {
   return '${items.length} 条 · 含 $samples 条示例数据，仅用于演示';
 }
 
-String _formatAmount(Price price) {
-  final major = price.amountMinor ~/ 100;
-  final cents = (price.amountMinor % 100).toString().padLeft(2, '0');
-  return '${price.currency} $major.$cents';
+String _formatAmount(Price price) =>
+    _formatAmountValue(price.amountMinor, price.currency);
+
+String _formatAmountValue(int amountMinor, String currency) {
+  final major = amountMinor ~/ 100;
+  final cents = (amountMinor % 100).toString().padLeft(2, '0');
+  return '$currency $major.$cents';
 }
 
 String _formatMinorInput(int amountMinor) {

@@ -1,7 +1,7 @@
 name: peerserve
 description: "PeerServe（信约阁）— 无中心业务服务器的 P2P 需求公告板客户端。"
 publish_to: 'none'
-version: 0.2.6+8
+version: 0.2.7+9
 
 environment:
   sdk: ^3.13.7

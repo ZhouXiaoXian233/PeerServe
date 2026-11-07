@@ -60,11 +60,54 @@ class SignedOffer {
     required this.offer,
     required this.envelope,
     required this.verified,
+    this.sampleProviderIdentity,
   });
 
   final Offer offer;
   final Envelope envelope;
   final bool verified;
+
+  /// 仅用于本机协议演示的模拟响应方私钥；真实 Offer 为 null。
+  final PeerIdentity? sampleProviderIdentity;
+
+  bool get isSample => sampleProviderIdentity != null;
+}
+
+/// 一份协议及其签名信封。
+///
+/// 双签按 ADR-014 使用两个独立信封；`providerEnvelope` 为空表示等待对方签署。
+class SignedAgreement {
+  const SignedAgreement({
+    required this.agreement,
+    required this.requesterEnvelope,
+    required this.requesterVerified,
+    this.providerEnvelope,
+    this.providerVerified = false,
+    this.sampleProviderIdentity,
+  });
+
+  final Agreement agreement;
+  final Envelope requesterEnvelope;
+  final bool requesterVerified;
+  final Envelope? providerEnvelope;
+  final bool providerVerified;
+  final PeerIdentity? sampleProviderIdentity;
+
+  bool get mutuallySigned =>
+      providerEnvelope != null && requesterVerified && providerVerified;
+
+  bool get canSimulateProvider =>
+      providerEnvelope == null && sampleProviderIdentity != null;
+
+  SignedAgreement withProviderEnvelope(Envelope envelope, bool verified) =>
+      SignedAgreement(
+        agreement: agreement,
+        requesterEnvelope: requesterEnvelope,
+        requesterVerified: requesterVerified,
+        providerEnvelope: envelope,
+        providerVerified: verified,
+        sampleProviderIdentity: sampleProviderIdentity,
+      );
 }
 
 /// 应用级内存会话。
@@ -78,6 +121,7 @@ class AppSession extends ChangeNotifier {
   UserProfile _profile = const UserProfile();
   final List<SignedRequest> _requests = <SignedRequest>[];
   final List<SignedOffer> _offers = <SignedOffer>[];
+  final List<SignedAgreement> _agreements = <SignedAgreement>[];
   bool _seeded = false;
   Future<void>? _bootstrapFuture;
 
@@ -88,11 +132,27 @@ class AppSession extends ChangeNotifier {
   List<SignedRequest> get requests =>
       List<SignedRequest>.unmodifiable(_requests);
   List<SignedOffer> get offers => List<SignedOffer>.unmodifiable(_offers);
+  List<SignedAgreement> get agreements =>
+      List<SignedAgreement>.unmodifiable(_agreements);
 
   List<SignedOffer> offersFor(String requestId) =>
       List<SignedOffer>.unmodifiable(
         _offers.where((item) => item.offer.requestId == requestId),
       );
+
+  List<SignedAgreement> agreementsFor(String requestId) =>
+      List<SignedAgreement>.unmodifiable(
+        _agreements.where((item) => item.agreement.requestId == requestId),
+      );
+
+  SignedAgreement? agreementForOffer(String offerId) {
+    for (final agreement in _agreements) {
+      if (agreement.agreement.offerId == offerId) {
+        return agreement;
+      }
+    }
+    return null;
+  }
 
   bool hasResponded(String requestId) =>
       _offers.any((item) => item.offer.requestId == requestId);
@@ -138,6 +198,7 @@ class AppSession extends ChangeNotifier {
     _identityFuture = null;
     _requests.clear();
     _offers.clear();
+    _agreements.clear();
     _seeded = false;
     _bootstrapFuture = null;
     notifyListeners();
@@ -238,6 +299,172 @@ class AppSession extends ChangeNotifier {
     _offers.add(signed);
     notifyListeners();
     return signed;
+  }
+
+  /// 为自己发布的需求生成一条**模拟响应**，用于走通协议流程。
+  ///
+  /// 响应方是运行时生成的示例身份，明确标记为示例，不代表真实用户。
+  Future<SignedOffer> simulateOfferForOwnRequest(SignedRequest request) async {
+    final identity = await ensureIdentity();
+    if (request.request.creatorId != identity.identityId) {
+      throw StateError('只能为自己的需求模拟响应');
+    }
+    if (_offers.any(
+      (item) => item.offer.requestId == request.request.requestId,
+    )) {
+      throw StateError('这条需求已经有一条响应');
+    }
+
+    final provider = await PeerIdentity.generate();
+    final now = DateTime.now().toUtc();
+    final requestExpires = DateTime.parse(request.request.expiresAt);
+    final createdAt = formatUtcTimestamp(now);
+    final twoHoursLater = now.add(const Duration(hours: 2));
+    final expiresAt = formatUtcTimestamp(
+      twoHoursLater.isBefore(requestExpires) ? twoHoursLater : requestExpires,
+    );
+
+    final offer = Offer(
+      offerId: Offer.newId(),
+      requestId: request.request.requestId,
+      providerId: provider.identityId,
+      message: '示例响应：我可以帮忙。',
+      proposedPrice: request.request.price,
+      proposedTime: request.request.timeWindow,
+      createdAt: createdAt,
+      expiresAt: expiresAt,
+    );
+    final validated = Offer.fromJson(offer.toJson());
+    final envelope = await provider.signEnvelope(
+      type: MessageType.offerCreated,
+      sentAt: createdAt,
+      payload: validated.toJson(),
+    );
+    final verified = await verifyEnvelopeSignature(envelope);
+    if (!verified) {
+      throw StateError('模拟 Offer 验签失败');
+    }
+
+    final signed = SignedOffer(
+      offer: validated,
+      envelope: envelope,
+      verified: verified,
+      sampleProviderIdentity: provider,
+    );
+    _offers.add(signed);
+    notifyListeners();
+    return signed;
+  }
+
+  /// 需求方接受一条 Offer，生成待对方签署的 Agreement。
+  Future<SignedAgreement> acceptOffer(
+    SignedRequest request,
+    SignedOffer offer,
+  ) async {
+    final identity = await ensureIdentity();
+    if (request.request.creatorId != identity.identityId) {
+      throw StateError('只有需求方可以接受响应');
+    }
+    if (!_offers.any((item) => item.offer.offerId == offer.offer.offerId)) {
+      throw StateError('响应不在本机列表中');
+    }
+    if (!offer.verified) {
+      throw StateError('响应验签失败');
+    }
+    final existing = agreementForOffer(offer.offer.offerId);
+    if (existing != null) {
+      return existing;
+    }
+
+    final now = DateTime.now().toUtc();
+    final requestExpires = DateTime.parse(request.request.expiresAt);
+    if (!requestExpires.isAfter(now)) {
+      throw StateError('需求已过期');
+    }
+    final createdAt = formatUtcTimestamp(now);
+    final agreedPrice =
+        offer.offer.proposedPrice?.amountMinor ??
+        request.request.price.amountMinor;
+    final currency =
+        offer.offer.proposedPrice?.currency ?? request.request.price.currency;
+
+    final agreement = Agreement(
+      agreementId: Agreement.newId(),
+      requestId: request.request.requestId,
+      offerId: offer.offer.offerId,
+      requesterId: identity.identityId,
+      providerId: offer.offer.providerId,
+      serviceTerms: request.request.description.isNotEmpty
+          ? request.request.description
+          : request.request.title,
+      agreedPriceMinor: agreedPrice,
+      currency: currency,
+      startConditions: '响应方按约定开始服务',
+      completionConditions: '双方确认完成',
+      cancellationTerms: '任一方可提前说明并取消',
+      createdAt: createdAt,
+      expiresAt: formatUtcTimestamp(requestExpires),
+    );
+    final validated = Agreement.fromJson(agreement.toJson());
+    final envelope = await identity.signEnvelope(
+      type: MessageType.agreementProposed,
+      sentAt: createdAt,
+      payload: validated.toJson(),
+    );
+    final verified = await verifyEnvelopeSignature(envelope);
+    if (!verified) {
+      throw StateError('Agreement 需求方签名验证失败');
+    }
+
+    final signed = SignedAgreement(
+      agreement: validated,
+      requesterEnvelope: envelope,
+      requesterVerified: verified,
+      sampleProviderIdentity: offer.sampleProviderIdentity,
+    );
+    _agreements.add(signed);
+    notifyListeners();
+    return signed;
+  }
+
+  /// 仅用于本机演示：让模拟响应方对同一 Agreement payload 签名。
+  Future<SignedAgreement> simulateProviderAccept(
+    SignedAgreement agreement,
+  ) async {
+    final index = _agreements.indexWhere(
+      (item) => item.agreement.agreementId == agreement.agreement.agreementId,
+    );
+    if (index < 0) {
+      throw StateError('协议不在本机列表中');
+    }
+    final current = _agreements[index];
+    final provider = current.sampleProviderIdentity;
+    if (provider == null || !current.canSimulateProvider) {
+      throw StateError('这份协议没有可用的模拟对方身份');
+    }
+    if (provider.identityId != current.agreement.providerId) {
+      throw StateError('模拟身份与协议 provider_id 不一致');
+    }
+
+    final sentAt = formatUtcTimestamp(DateTime.now().toUtc());
+    final envelope = await provider.signEnvelope(
+      type: MessageType.agreementSigned,
+      sentAt: sentAt,
+      payload: current.agreement.toJson(),
+    );
+    if (canonicalize(envelope.payload) !=
+        canonicalize(current.requesterEnvelope.payload)) {
+      throw StateError('双方签署的 Agreement payload 不一致');
+    }
+    final verified = await verifyEnvelopeSignature(envelope);
+    if (!verified) {
+      throw StateError('Agreement 响应方签名验证失败');
+    }
+
+    final updated = current.withProviderEnvelope(envelope, verified);
+    _agreements[index] = updated;
+    notifyListeners();
+    return updated;
   }
 
   Future<SignedRequest> _createSignedRequest({

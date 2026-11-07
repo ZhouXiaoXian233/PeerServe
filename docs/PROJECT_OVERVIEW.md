@@ -67,7 +67,7 @@ PeerServe 的假设是：**协作本身不需要一个中介持有数据**。把
 
 ## 7. 当前状态（诚实版）
 
-**已具备**：Flutter 应用外壳、主题、精简首页、个人中心、内存身份页、需求公告板与发布表单、示例需求、需求响应（Offer）、widget 测试、CI；`osn_protocol`（无浮点 JCS、严格 JSON、信封、Request/Offer/Agreement v1）与 `osn_identity`（Ed25519、did:key、验签）；固定信封/Request/Offer/Agreement 测试向量。
+**已具备**：Flutter 应用外壳、主题、精简首页、个人中心、内存身份页、需求公告板与发布表单、示例需求、需求响应（Offer）、本机协议流程（接受 Offer → 待签 → 模拟双方签署）、widget 测试、CI；`osn_protocol`（无浮点 JCS、严格 JSON、信封、Request/Offer/Agreement v1）与 `osn_identity`（Ed25519、did:key、验签）；固定信封/Request/Offer/Agreement 测试向量。
 
 **不具备**：Offer/Agreement/Event/Review 业务对象、数据库、网络传输、发现、完整 UI 业务流程。
 

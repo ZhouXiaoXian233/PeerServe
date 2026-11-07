@@ -60,10 +60,11 @@
 - [x] 双签采用两个独立信封（ADR-014），payload 内不嵌签名
 - [x] 双方对同一 payload 各自签名、独立验签的测试
 - [x] `agreement.v1.json` Schema 与固定 Agreement 向量
-- [ ] 需求方选择 Offer 并生成 Agreement（UI）
+- [x] 需求方接受 Offer、生成待签 Agreement、模拟对方签署（本机演示）
+- [x] 协议详情页：条款、双方签署状态与签署条件
 - [ ] Event / Review 模型
 
-**验收**：双方信封 payload 的 JCS 相同；两个签名都验证通过；条款非法时拒绝。
+**验收**：双方信封 payload 的 JCS 相同；两个签名都验证通过；条款非法时拒绝；本机 UI 可显示“等待对方签署 / 双方已签署”。
 
 ## Phase 0.3 存储
 
